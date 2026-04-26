@@ -1,0 +1,8 @@
+{
+  "name": "acid",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Durable execution primitives for AI agents — atomicity, consistency, isolation, durability.",
+  "license": "MIT",
+  "author": "Romario Kavin"
+}
