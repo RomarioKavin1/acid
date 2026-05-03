@@ -44,6 +44,9 @@ importers:
       '@openacid/adapter-0g-storage':
         specifier: workspace:*
         version: link:../../packages/adapter-0g-storage
+      '@openacid/adapter-ens':
+        specifier: workspace:*
+        version: link:../../packages/adapter-ens
       '@openacid/adapter-memory':
         specifier: workspace:*
         version: link:../../packages/adapter-memory

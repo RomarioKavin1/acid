@@ -52,6 +52,7 @@ export interface BuildSagaDeps {
   usdc: Hex;
   universalRouter: Hex;
   dryRun: boolean;
+  onReceipt?: (r: Receipt) => Promise<void> | void;
   agentName: string;
 }
 
@@ -204,8 +205,9 @@ export function buildRebalanceAction(deps: BuildSagaDeps) {
       }
       return out;
     },
-    onReceipt: (r) => {
+    onReceipt: async (r) => {
       lastReceipt = r;
+      if (deps.onReceipt) await deps.onReceipt(r);
     },
   })(deduped);
 

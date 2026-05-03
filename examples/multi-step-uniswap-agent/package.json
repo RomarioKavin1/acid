@@ -16,6 +16,7 @@
     "@openacid/adapter-memory": "workspace:*",
     "@openacid/adapter-viem": "workspace:*",
     "@openacid/adapter-0g-storage": "workspace:*",
+    "@openacid/adapter-ens": "workspace:*",
     "viem": "^2.21.0"
   },
   "devDependencies": {

@@ -1,11 +1,12 @@
 import { createPublicClient, createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { baseSepolia } from "viem/chains";
+import { baseSepolia, sepolia } from "viem/chains";
 import {
   MemoryStorageAdapter,
 } from "@openacid/adapter-memory";
 import { ViemSigner } from "@openacid/adapter-viem";
 import { ZeroGStorageAdapter } from "@openacid/adapter-0g-storage";
+import { EnsReceiptMirror } from "@openacid/adapter-ens";
 import type { StorageAdapter, SignerAdapter, Receipt } from "@openacid/acid";
 import { loadConfig, type AgentConfig } from "./config.js";
 import { readPortfolio, describePortfolio } from "./wallet-state.js";
@@ -30,6 +31,7 @@ export class RebalancingAgent {
   private readonly signer: SignerAdapter;
   private readonly cfg: AgentConfig;
   private readonly agentName = "rebalancer-1";
+  private readonly ensMirror: EnsReceiptMirror | undefined;
   private stopRequested = false;
 
   constructor(cfg: AgentConfig) {
@@ -53,6 +55,20 @@ export class RebalancingAgent {
         })
       : new MemoryStorageAdapter();
     this.signer = new ViemSigner({ privateKey: cfg.privateKey });
+
+    if (cfg.ens) {
+      const ensAccount = privateKeyToAccount(cfg.ens.privateKey);
+      const ensWallet = createWalletClient({
+        chain: sepolia,
+        transport: http(cfg.ens.sepoliaRpc),
+        account: ensAccount,
+      });
+      this.ensMirror = new EnsReceiptMirror({
+        walletClient: ensWallet,
+        resolver: cfg.ens.resolver,
+        subname: cfg.ens.parentName,
+      });
+    }
   }
 
   async tick(oracleRatePerEth: bigint): Promise<AgentTickResult> {
@@ -98,6 +114,20 @@ export class RebalancingAgent {
       universalRouter: this.cfg.v4.universalRouter,
       dryRun: this.cfg.dryRun,
       agentName: this.agentName,
+      ...(this.ensMirror
+        ? {
+            onReceipt: async (r) => {
+              try {
+                await this.ensMirror!.onReceipt(r);
+                log(`mirrored receipt to ENS: ${this.cfg.ens?.parentName}`);
+              } catch (err) {
+                log(
+                  `ENS mirror failed (non-fatal): ${err instanceof Error ? err.message : String(err)}`,
+                );
+              }
+            },
+          }
+        : {}),
     });
 
     const args: RebalanceArgs = {

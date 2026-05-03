@@ -26,6 +26,12 @@ export interface AgentConfig {
     indexerRpc: string;
     privateKey: string;
   };
+  ens?: {
+    sepoliaRpc: string;
+    parentName: string;
+    resolver: Hex;
+    privateKey: Hex;
+  };
 }
 
 export function loadConfig(): AgentConfig {
@@ -70,6 +76,19 @@ export function loadConfig(): AgentConfig {
       chainRpc: process.env.ZEROG_CHAIN_RPC,
       indexerRpc: process.env.ZEROG_STORAGE_INDEXER_RPC,
       privateKey: process.env.ZEROG_CHAIN_PRIVATE_KEY,
+    };
+  }
+
+  if (process.env.ENS_PARENT_NAME && process.env.EVM_PRIVATE_KEY) {
+    const ensPk = process.env.ENS_PRIVATE_KEY ?? process.env.EVM_PRIVATE_KEY;
+    config.ens = {
+      sepoliaRpc:
+        process.env.SEPOLIA_RPC ?? "https://ethereum-sepolia-rpc.publicnode.com",
+      parentName: process.env.ENS_PARENT_NAME,
+      resolver:
+        (process.env.ENS_PUBLIC_RESOLVER ??
+          "0xE99638b40E4Fff0129D56f03b55b6bbC4BBE49b5") as Hex,
+      privateKey: (ensPk.startsWith("0x") ? ensPk : `0x${ensPk}`) as Hex,
     };
   }
 
