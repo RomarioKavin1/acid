@@ -22,7 +22,8 @@ export interface SagaStep {
   compensateOn?: "failure" | "never";
 }
 
-export interface SagaContext {
+export interface SagaContext<A = unknown> {
+  args: A;
   sagaId: string;
   attempt: number;
   results: Record<string, unknown>;

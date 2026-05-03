@@ -20,6 +20,8 @@ export {
   type IdempotentInFlightMode,
 } from "./idempotent.js";
 
+export { saga, type SagaOpts } from "./saga.js";
+
 export {
   AcidError,
   NonDeterministicKeyError,
