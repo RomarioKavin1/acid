@@ -31,7 +31,7 @@ PAUSE=5 ./scripts/demo.sh     # longer pauses for narration
 | **C — Consistency** | A saga "succeeds" mechanically but leaves a 5 USDC orphan allowance. The `noOrphanAllowances` postcondition rejects the action with severity `critical`. | `invariant` + `noOrphanAllowances` |
 | **I — Isolation** | Two parallel `action()` calls with identical args. The second blocks on the in-flight marker; the underlying saga runs once; both calls receive the same result. | `idempotent` |
 | **D — Durability** | Saga runs in "process A", receipt is persisted, "process A is killed", "process B" restarts with the same args. No re-broadcast. The persisted receipt's EIP-712 signature still recovers to the signer's address. | `receipted` + `verifyReceipt` |
-| **LIVE** | One tick of the rebalancer against **real Base Sepolia** balances, **real 0G Galileo** receipt blob upload, and **real Sepolia ENS** text record write. Reads `openacid.eth/receipt.latest` before and after; polls until the resolver reflects the new callId. | `RebalancingAgent.tick` + `EnsReceiptMirror` + viem ENS resolver |
+| **LIVE** | One tick of the rebalancer against **real Base Sepolia** balances, a **real Uniswap V4 swap broadcast** (Universal Router `V4_SWAP` against the ETH/USDC pool), **real 0G Galileo** receipt blob upload, and **real Sepolia ENS** text record write. Reads `openacid.eth/receipt.latest` before and after; polls until the resolver reflects the new callId. Caps the live swap size via `LIVE_AMOUNT_IN_WEI_CAP` (default 0.001 ETH) so a single tick doesn't drain the wallet on thin testnet liquidity. | `RebalancingAgent.tick` + V4 Universal Router + `EnsReceiptMirror` + viem ENS resolver |
 
 ## Running the live agent
 
@@ -67,6 +67,14 @@ DRIFT_THRESHOLD_BPS=500       # 5%
 TARGET_ETH_RATIO_BPS=6000     # 60%
 SLIPPAGE_BPS=50               # 0.5%
 POLL_INTERVAL_MS=30000
+
+# V4 pool selection — defaults are the live ETH/USDC pool on Base Sepolia
+POOL_FEE=500                  # 0.05%
+POOL_TICK_SPACING=10
+POOL_HOOKS=0x0000000000000000000000000000000000000000
+
+# Live swap safety cap (wei). Default for demo:live is 10^15 = 0.001 ETH.
+LIVE_AMOUNT_IN_WEI_CAP=1000000000000000
 ```
 
 ## Recording the demo (3-min video)
@@ -80,7 +88,7 @@ Suggested narration & timing:
 | 0:50–1:25 | `demo:c` runs | "Consistency. The saga succeeds mechanically but leaves a non-zero allowance. The postcondition fires; the action is rejected." |
 | 1:25–1:55 | `demo:i` runs | "Isolation. Two parallel calls, same idempotency key. The second blocks; only one execution; both calls get the same result." |
 | 1:55–2:25 | `demo:d` runs | "Durability. The agent broadcasts, then crashes. On restart, no re-broadcast, no double-spend. The persisted receipt is signed and verifies." |
-| 2:25–3:05 | `demo:live` runs against real chains | "And here's the full pipeline live. Base Sepolia balance read, decision, saga, 0G Storage upload, ENS mirror — and now we're polling the resolver until it reflects the new callId. Verified — any third party can hit any ENS resolver and get this." |
+| 2:25–3:05 | `demo:live` runs against real chains | "And here's the full pipeline live. Base Sepolia balance read, decision, saga — quotes V4, applies slippage, broadcasts the actual `V4_SWAP` against the ETH/USDC pool — receipt blob to 0G Storage, ENS mirror — and now we're polling the resolver until it reflects the new callId. Verified on chain: real swap tx, real receipt CID, any third party can hit any ENS resolver and read it back." |
 
 ## Architecture (per the rebalance action)
 
@@ -95,7 +103,9 @@ ACTION COMPOSITION (outer to inner):
         saga({ steps: [approve, swap, stake] })
 
 ON-CHAIN WRITES:
-  Base Sepolia        — V4 swap                  (only the saga's swap step)
+  Base Sepolia        — V4 swap (Universal Router execute, V4_SWAP cmd)
+                        actions: SWAP_EXACT_IN_SINGLE → SETTLE_ALL → TAKE_ALL
+                        ETH input: native value, no Permit2
   0G Galileo          — receipt blob upload     (receipted's persistence)
   Sepolia ENS         — text record writes      (EnsReceiptMirror onReceipt)
 ```

@@ -13,6 +13,13 @@ import type {
 } from "@openacid/acid";
 import type { DriftDecision } from "./drift.js";
 import { readAllowance } from "./wallet-state.js";
+import {
+  buildExactInSingleSwap,
+  quoteExactInputSingle,
+  applySlippage,
+  UNIVERSAL_ROUTER_ABI,
+  NATIVE,
+} from "./v4-swap.js";
 
 // Loose viem client types so the example doesn't fight pnpm's hoisting (the
 // strict viem types reference identical generics that pnpm gives us under
@@ -51,6 +58,10 @@ export interface BuildSagaDeps {
   weth: Hex;
   usdc: Hex;
   universalRouter: Hex;
+  quoter: Hex;
+  pool: { fee: number; tickSpacing: number; hooks: Hex };
+  slippageBps: number;
+  liveAmountInWeiCap?: bigint;
   dryRun: boolean;
   onReceipt?: (r: Receipt) => Promise<void> | void;
   agentName: string;
@@ -68,6 +79,10 @@ export function buildRebalanceAction(deps: BuildSagaDeps) {
     weth,
     usdc,
     universalRouter,
+    quoter,
+    pool,
+    slippageBps,
+    liveAmountInWeiCap,
     dryRun,
     agentName,
   } = deps;
@@ -118,9 +133,68 @@ export function buildRebalanceAction(deps: BuildSagaDeps) {
                 : { tx: simulatedHash("swap", ctx.sagaId), out: 950n * 10n ** 12n };
             return out;
           }
-          throw new Error(
-            "live V4 swap not implemented in this example — use --dry-run or extend with the Universal Router commands payload for your pool",
-          );
+
+          if (decision.direction === "usdc->eth") {
+            throw new Error(
+              "USDC→ETH live swap requires Permit2 wiring; not implemented yet. Run with --dry-run for this direction or fund the wallet so drift triggers ETH→USDC.",
+            );
+          }
+
+          const tokenIn = NATIVE;
+          const tokenOut = usdc;
+          const cappedAmountIn =
+            liveAmountInWeiCap !== undefined &&
+            decision.amountInWei > liveAmountInWeiCap
+              ? liveAmountInWeiCap
+              : decision.amountInWei;
+
+          const quoted = await quoteExactInputSingle({
+            publicClient,
+            quoter,
+            tokenIn,
+            tokenOut,
+            fee: pool.fee,
+            tickSpacing: pool.tickSpacing,
+            hooks: pool.hooks,
+            amountIn: cappedAmountIn,
+          });
+          const minOut = applySlippage(quoted, slippageBps);
+
+          const built = buildExactInSingleSwap({
+            tokenIn,
+            tokenOut,
+            fee: pool.fee,
+            tickSpacing: pool.tickSpacing,
+            hooks: pool.hooks,
+            amountIn: cappedAmountIn,
+            amountOutMinimum: minOut,
+          });
+
+          const txHash: Hex = await walletClient.writeContract({
+            address: universalRouter,
+            abi: UNIVERSAL_ROUTER_ABI,
+            functionName: "execute",
+            args: [built.commands, built.inputs, BigInt(ctx.args.deadline)],
+            value: built.value,
+            account: walletClient.account!,
+            chain: walletClient.chain,
+          });
+
+          const rcpt = await publicClient.waitForTransactionReceipt({
+            hash: txHash,
+          });
+          if (rcpt.status !== "success") {
+            throw new Error(
+              `V4 swap reverted on Base Sepolia: tx=${txHash} status=${rcpt.status}`,
+            );
+          }
+
+          return {
+            tx: txHash,
+            out: quoted,
+            minOut,
+            amountIn: cappedAmountIn,
+          };
         },
       },
     ],

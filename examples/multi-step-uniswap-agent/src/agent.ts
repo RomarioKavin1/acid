@@ -112,6 +112,12 @@ export class RebalancingAgent {
       weth: this.cfg.pairs.weth,
       usdc: this.cfg.pairs.usdc,
       universalRouter: this.cfg.v4.universalRouter,
+      quoter: this.cfg.v4.quoter,
+      pool: this.cfg.pool,
+      slippageBps: this.cfg.slippageBps,
+      ...(this.cfg.liveAmountInWeiCap !== undefined
+        ? { liveAmountInWeiCap: this.cfg.liveAmountInWeiCap }
+        : {}),
       dryRun: this.cfg.dryRun,
       agentName: this.agentName,
       ...(this.ensMirror

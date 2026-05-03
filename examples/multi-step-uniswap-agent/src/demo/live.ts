@@ -3,8 +3,10 @@
  * Storage, and real Sepolia ENS. Reads the ENS receipt.latest text record
  * before and after the tick to prove the audit trail updated on-chain.
  *
- * Runs in DRY-RUN mode for the swap step (no V4 broadcast required), but
- * the receipt persistence and ENS mirroring are fully live.
+ * Fully live: V4 swap broadcasts on Base Sepolia, receipt persists to 0G
+ * Storage, ENS resolver text record updates on Sepolia. Caps the live swap
+ * size via LIVE_AMOUNT_IN_WEI_CAP (default 0.001 ETH) so a single demo tick
+ * doesn't drain the wallet on thin testnet liquidity.
  */
 
 import { createPublicClient, http, namehash, type Hex } from "viem";
@@ -37,15 +39,15 @@ const RESOLVER_ABI = [
 ] as const;
 
 async function main(): Promise<void> {
-  if (!process.argv.includes("--dry-run")) {
-    process.argv.push("--dry-run");
+  if (!process.env.LIVE_AMOUNT_IN_WEI_CAP) {
+    process.env.LIVE_AMOUNT_IN_WEI_CAP = (10n ** 15n).toString();
   }
 
   const cfg = loadConfig();
   banner("D", "LIVE — Base Sepolia · 0G Galileo · Sepolia ENS");
 
   const signer = privateKeyToAccount(cfg.privateKey).address;
-  step(1, `mode:        DRY-RUN swap step, LIVE persistence`);
+  step(1, `mode:        LIVE V4 swap (cap ${cfg.liveAmountInWeiCap ?? "uncapped"} wei)`);
   step(2, `signer:      ${signer}`);
   step(
     3,

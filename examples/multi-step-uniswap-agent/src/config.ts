@@ -20,6 +20,12 @@ export interface AgentConfig {
     universalRouter: Hex;
     quoter: Hex;
   };
+  pool: {
+    fee: number;
+    tickSpacing: number;
+    hooks: Hex;
+  };
+  liveAmountInWeiCap?: bigint;
   dryRun: boolean;
   zeroG?: {
     chainRpc: string;
@@ -64,6 +70,15 @@ export function loadConfig(): AgentConfig {
       universalRouter: "0x492e6456d9528771018deb9e87ef7750ef184104" as Hex,
       quoter: "0x4a6513c898fe1b2d0e78d3b0e0a4a151589b1cba" as Hex,
     },
+    pool: {
+      fee: Number(process.env.POOL_FEE ?? 500),
+      tickSpacing: Number(process.env.POOL_TICK_SPACING ?? 10),
+      hooks: (process.env.POOL_HOOKS ??
+        "0x0000000000000000000000000000000000000000") as Hex,
+    },
+    ...(process.env.LIVE_AMOUNT_IN_WEI_CAP
+      ? { liveAmountInWeiCap: BigInt(process.env.LIVE_AMOUNT_IN_WEI_CAP) }
+      : {}),
     dryRun,
   };
 

@@ -6,13 +6,13 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "tsx src/main.ts",
-    "dry-run": "tsx src/main.ts --dry-run",
+    "dev": "tsx --env-file=.env src/main.ts",
+    "dry-run": "tsx --env-file=.env src/main.ts --dry-run",
     "demo:a": "tsx src/demo/atomicity.ts",
     "demo:c": "tsx src/demo/consistency.ts",
     "demo:i": "tsx src/demo/isolation.ts",
     "demo:d": "tsx src/demo/durability.ts",
-    "demo:live": "tsx src/demo/live.ts",
+    "demo:live": "tsx --env-file=.env src/demo/live.ts",
     "demo:all": "tsx src/demo/atomicity.ts && tsx src/demo/consistency.ts && tsx src/demo/isolation.ts && tsx src/demo/durability.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
