@@ -7,6 +7,7 @@ import type {
 } from "./types.js";
 import { SagaCompensationError, SagaStepError } from "./errors.js";
 import { tagWrapper } from "./compose.js";
+import { canonicalJson } from "./canonical.js";
 
 export interface SagaOpts<A> {
   steps: SagaStep[];
@@ -275,19 +276,6 @@ async function runCompensations<A>(
 
 function sagaIdFromArgs(args: unknown): string {
   return keccak256(stringToBytes(canonicalJson(args))).slice(2, 18);
-}
-
-function canonicalJson(value: unknown): string {
-  if (value === null || typeof value !== "object") return JSON.stringify(value);
-  if (Array.isArray(value))
-    return `[${value.map(canonicalJson).join(",")}]`;
-  if (value instanceof Uint8Array)
-    return JSON.stringify(`u8:${[...value].join(",")}`);
-  const obj = value as Record<string, unknown>;
-  const keys = Object.keys(obj).sort();
-  return `{${keys
-    .map((k) => `${JSON.stringify(k)}:${canonicalJson(obj[k])}`)
-    .join(",")}}`;
 }
 
 function serializeError(err: unknown): { name: string; message: string } {

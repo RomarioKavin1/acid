@@ -8,6 +8,7 @@ import {
 } from "viem";
 import type { Receipt } from "./types.js";
 import { ReceiptVerificationError } from "./errors.js";
+import { canonicalJson } from "./canonical.js";
 
 export const RECEIPT_DOMAIN_NAME = "OpenACID Receipt";
 export const RECEIPT_DOMAIN_VERSION = "1";
@@ -135,24 +136,6 @@ export async function verifyReceipt(
     );
   }
   return true;
-}
-
-function canonicalJson(value: unknown): string {
-  if (value === null || typeof value !== "object")
-    return JSON.stringify(value, bigintToString);
-  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
-  if (value instanceof Uint8Array) {
-    return JSON.stringify(`u8:${[...value].join(",")}`);
-  }
-  const obj = value as Record<string, unknown>;
-  const keys = Object.keys(obj).sort();
-  return `{${keys
-    .map((k) => `${JSON.stringify(k)}:${canonicalJson(obj[k])}`)
-    .join(",")}}`;
-}
-
-function bigintToString(_k: string, v: unknown): unknown {
-  return typeof v === "bigint" ? `bigint:${v.toString()}` : v;
 }
 
 export { ZERO_BYTES32 };
