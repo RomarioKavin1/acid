@@ -13,3 +13,20 @@ export type {
 export type { StorageAdapter } from "./adapters/storage.js";
 export type { ChainAdapter, TxStatus } from "./adapters/chain.js";
 export type { SignerAdapter } from "./adapters/signer.js";
+
+export {
+  idempotent,
+  type IdempotentOpts,
+  type IdempotentInFlightMode,
+} from "./idempotent.js";
+
+export {
+  AcidError,
+  NonDeterministicKeyError,
+  IdempotentInFlightError,
+  IdempotentInFlightLostError,
+  InvariantViolationError,
+  SagaCompensationError,
+  SagaStepError,
+  ReceiptVerificationError,
+} from "./errors.js";
