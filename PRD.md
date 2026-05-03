@@ -780,18 +780,18 @@ Do **not** cut: the four core primitives, the memory adapter, the example agent,
 
 ## 14. Open questions
 
-| # | Question | Resolve before |
-|---|---|---|
-| 1 | npm package name: `acid` vs `@acid-lib/core` vs other? | Phase 1 |
-| 2 | Domain: `acid.ai` — available? | Phase 7 |
-| 3 | Target chain for example: Base, Unichain, or 0G Chain only? | Phase 5 |
-| 4 | OpenClaw native or build a thin compat shim? | Phase 5 |
-| 5 | iNFT minting in v0 or defer to v1? | Phase 6 |
-| 6 | Pin which LLM (qwen3.6-plus / GLM-5-FP8) for the demo agent? | Phase 5 |
-| 7 | Logo / wordmark — DIY or use a generator? | Phase 7 |
-| 8 | Receipt signing scheme: EIP-191 personal_sign, EIP-712 typed, or raw secp256k1? | Phase 2 |
-| 9 | Saga state size limits — what's the upper bound for a single saga in 0G Storage? | Phase 4 |
-| 10 | License — MIT, Apache-2.0, or AGPL? | Phase 7 |
+| # | Question | Resolve before | Status |
+|---|---|---|---|
+| 1 | npm package name: `acid` vs `@acid-lib/core` vs other? | Phase 1 | **Resolved: `acid`** |
+| 2 | Domain: `acid.ai` — available? | Phase 7 | Non-blocking |
+| 3 | Target chain for example: Base, Unichain, or 0G Chain only? | Phase 5 | **Resolved: 0G Chain is the primary chain (ReceiptRegistry, receipts, storage, compute). Base is the swap chain for the Uniswap V4 example (Uniswap V4 is not deployed on 0G Chain).** |
+| 4 | OpenClaw native or build a thin compat shim? | Phase 5 | Non-blocking |
+| 5 | iNFT minting in v0 or defer to v1? | Phase 6 | Non-blocking |
+| 6 | Pin which LLM (qwen3.6-plus / GLM-5-FP8) for the demo agent? | Phase 5 | Non-blocking |
+| 7 | Logo / wordmark — DIY or use a generator? | Phase 7 | Non-blocking |
+| 8 | Receipt signing scheme: EIP-191 personal_sign, EIP-712 typed, or raw secp256k1? | Phase 2 | **Resolved: EIP-712 typed data signing. Reasons: (1) `ReceiptRegistry.sol` can call `ecrecover(structHash, v, r, s)` natively; (2) domain separator includes `chainId` (0G Chain = 16600) preventing cross-chain replay; (3) Receipt struct fields are human-readable in the signature — auditors see what was signed. viem `signTypedData` / `verifyTypedData` cover the full impl.** |
+| 9 | Saga state size limits — what's the upper bound for a single saga in 0G Storage? | Phase 4 | Non-blocking |
+| 10 | License — MIT, Apache-2.0, or AGPL? | Phase 7 | Non-blocking |
 
 ---
 

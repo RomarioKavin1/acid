@@ -75,7 +75,7 @@ LLM_MODEL=qwen3.6-plus        # or GLM-5-FP8
 | Tests | **vitest 3** | jsdom not needed; node env |
 | Lint | **eslint** flat config + **prettier** | |
 | Chain (EVM) | **viem 2.x** | The chain adapter wraps viem |
-| Crypto/signing | **viem** + **@noble/curves** | EIP-191 personal_sign for receipts (decision pending in PRD §14 q8) |
+| Crypto/signing | **viem** + **@noble/curves** | EIP-712 typed data signing for receipts (`signTypedData` / `verifyTypedData` via viem); domain separator uses 0G Chain chainId (16600) |
 | Storage SDK (primary backend) | **0G Storage SDK** | KV for in-flight markers, blob for receipts |
 | LLM (example agent) | **0G Compute** | `qwen3.6-plus` or `GLM-5-FP8`; pinned in Phase 5 |
 | Agent framework (example) | **OpenClaw** | The example agent imports OpenClaw; ACID itself is framework-agnostic |
@@ -284,7 +284,7 @@ interface SignerAdapter {
 - When drift > threshold, executes a multi-step swap saga: `approve → swap → (optional) stake`
 - All actions wrapped in `receipted(invariant(idempotent(saga(...))))`
 - Reasoning runs on 0G Compute
-- Receipts persist to 0G Storage
+- Receipts persist to 0G Storage; `ReceiptRegistry.sol` anchors merkle roots on 0G Chain (chainId 16600)
 - Latest receipt CID published to ENS subname text record
 
 ### 6.2 Why it's the right demo
