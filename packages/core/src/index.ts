@@ -63,6 +63,15 @@ export {
 } from "./conformance/storage.js";
 
 export {
+  chainAwareBroadcast,
+  inspectInFlight,
+  type BroadcastRecord,
+  type BroadcastOutcome,
+  type ChainAwareBroadcastOpts,
+  type InspectInFlightOpts,
+} from "./chain-aware.js";
+
+export {
   AcidError,
   NonDeterministicKeyError,
   IdempotentInFlightError,
