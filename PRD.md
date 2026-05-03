@@ -524,37 +524,53 @@ The example agent is a plain TypeScript service: a `setInterval` loop that polls
 - Demo: live ENS resolver lookup → receipt CID → receipt content in 0G Storage
 - "Verifiable activity log via DNS-style ENS resolution" is the creative angle
 
-### 10.3 Demo script (4 scenes)
+### 10.3 Demo script (5 scenes — fully scripted)
+
+Implemented under `examples/multi-step-uniswap-agent/src/demo/`. Each is one tsx file with banner-styled output, no mocks, real `@openacid/*` calls. The orchestrator at `scripts/demo.sh` runs A/C/I/D back-to-back; `demo:live` is the closing scene against real chains.
 
 ```
-   A.   ATOMICITY
+   A.   ATOMICITY                                 (in-memory, ~2s)
    ────────────────────────────────────────────────────────
-   Multi-step Uniswap V4 saga: approve → swap → stake.
-   Force step 3 to fail mid-execution.
-   Library auto-runs compensations in reverse.
-   Result: zero orphan allowances on chain.
+   Multi-step saga: approve → swap → stake.
+   Step 3 throws. Compensations run in reverse.
+   Final state: zero orphan allowances.
+   Run:  pnpm --filter @openacid/example-uniswap-agent demo:a
 
-   C.   CONSISTENCY
+   C.   CONSISTENCY                               (in-memory, ~1s)
    ────────────────────────────────────────────────────────
-   Same agent. Postcondition: "agent's allowance count
-   equals starting count." A malicious tool leaves an
-   allowance. Postcondition fires. Action refused.
+   Saga "succeeds" but a buggy step leaves a 5 USDC orphan.
+   noOrphanAllowances postcondition fires (severity: critical).
+   Action rejected with InvariantViolationError.
+   Run:  pnpm --filter @openacid/example-uniswap-agent demo:c
 
-   I.   ISOLATION
+   I.   ISOLATION                                 (in-memory, ~1.5s)
    ────────────────────────────────────────────────────────
    Two parallel calls, same idempotency key.
-   Library blocks the second. First commits.
-   Second receives cached result. Zero double-execution.
+   Second blocks on the in-flight marker; underlying saga runs once.
+   Both calls receive identical results.
+   Run:  pnpm --filter @openacid/example-uniswap-agent demo:i
 
-   D.   DURABILITY
+   D.   DURABILITY                                (in-memory, ~1s)
    ────────────────────────────────────────────────────────
-   kill -9 the agent mid-broadcast. Restart.
-   Library reconciles via 0G Storage + chain query.
-   Pending tx detected. No re-broadcast.
-   Five txs, exactly five.
+   "Process A" runs saga, persists receipt, simulated kill -9.
+   "Process B" restarts with same args. No re-broadcast.
+   verifyReceipt() recovers the EIP-712 signer correctly.
+   Run:  pnpm --filter @openacid/example-uniswap-agent demo:d
+
+   LIVE.   ★ THE PUNCHLINE                        (real chains, ~30-40s)
+   ────────────────────────────────────────────────────────
+   One real tick: read Base Sepolia balance, decide rebalance,
+   run saga (dry-run swap step), persist receipt to 0G Storage,
+   mirror callId to openacid.eth/receipt.latest on Sepolia ENS.
+   Then poll the resolver until it reflects the new callId.
+   Final line: "ENS receipt.latest matches the agent's
+                freshly-emitted callId — third party verifiable".
+   Run:  pnpm --filter @openacid/example-uniswap-agent demo:live
 ```
 
 Closing slide: **A.C.I.D. — for AI agents.**
+
+**Recording flow (3 min total):** start `./scripts/demo.sh` (clears screen, runs A→C→I→D with 2s pauses, prints closing card with the live contract address + ENS name); then `pnpm --filter @openacid/example-uniswap-agent demo:live` for the on-chain readback finale.
 
 ### 10.4 Submission checklist
 
@@ -568,10 +584,11 @@ Closing slide: **A.C.I.D. — for AI agents.**
 - [x] **ENS name registered** — `openacid.eth` on Sepolia, owner `0x3ca83AE5…BDC9A`, with live `receipt.latest` / `receipt.head` / `agent.signer` text records
 - [x] **Live-resolvable agent identity** (satisfies the OR-clause for the iNFT requirement)
 - [x] **npm published** — 5 packages × 4 versions (0.1.0 → 0.2.0)
+- [x] **Demo scripts** — A/C/I/D scenes + `demo:live` against real chains, all under `examples/.../src/demo/`; `scripts/demo.sh` orchestrator wired
 - [ ] **GitHub public** — repo not yet pushed/made public
 - [ ] **Architecture diagram** (one image) — TODO
-- [ ] **Demo video** (≤3 min, A/C/I/D scenes per §10.3) — TODO
-- [ ] **Live demo link** — TODO (likely the README + a short loom of the agent + the ENS resolver call)
+- [ ] **Demo video recorded** (≤3 min using the scripts above) — TODO
+- [ ] **Live demo link** — TODO (host README + a Loom of the recorded session)
 - [ ] **ENS subname registrar deployed** — using parent name directly for v0; subname registrar deferred
 
 ---

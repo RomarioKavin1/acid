@@ -134,28 +134,47 @@ acid/                                ← repo root, monorepo
 ├── examples/
 │   └── multi-step-uniswap-agent/    ← ★ THE DEMO AGENT
 │       ├── src/
-│       │   ├── agent.ts             ← plain TS loop + viem
-│       │   ├── tools/               ← approve, swap, stake
-│       │   ├── invariants.ts        ← agent-specific invariants
-│       │   └── main.ts
-│       └── README.md
+│       │   ├── agent.ts             ← RebalancingAgent: plain TS loop + viem
+│       │   ├── config.ts            ← env loading (Base + 0G + ENS)
+│       │   ├── drift.ts             ← rebalance decision math
+│       │   ├── wallet-state.ts      ← portfolio reads (ETH + ERC20)
+│       │   ├── saga-build.ts        ← composes receipted(invariant(idempotent(saga())))
+│       │   ├── main.ts              ← `pnpm dev` / `pnpm dry-run` entry
+│       │   └── demo/                ← ★ recordable demo scenes
+│       │       ├── banner.ts        ← ANSI helpers shared by scenes
+│       │       ├── atomicity.ts     ← A scene (in-memory, ~2s)
+│       │       ├── consistency.ts   ← C scene (in-memory, ~1s)
+│       │       ├── isolation.ts     ← I scene (in-memory, ~1.5s)
+│       │       ├── durability.ts    ← D scene (in-memory, ~1s)
+│       │       └── live.ts          ← live tick: Base Sepolia + 0G + ENS readback (~30-40s)
+│       └── README.md                ← demo recording walkthrough
 │
 ├── contracts/
 │   ├── src/
 │   │   └── ReceiptRegistry.sol      ← anchors receipt merkle roots on 0G Chain
-│   ├── script/                      ← Foundry deploy scripts
+│   ├── test/
+│   │   └── ReceiptRegistry.t.sol    ← 8 forge tests covering merkle + ecrecover
+│   ├── script/
+│   │   └── Deploy.s.sol             ← `forge script script/Deploy.s.sol --broadcast`
 │   └── foundry.toml
 │
-├── docs/                            ← longer-form design notes
+├── scripts/
+│   ├── demo.sh                      ← orchestrator (clears screen, runs A/C/I/D, closing card)
+│   └── register-ens.ts              ← one-shot openacid.eth registration on Sepolia
+│
+├── docs/                            ← longer-form design notes (not yet populated)
 │
 ├── PRD.md                           ← ★ source of truth for design
 ├── CLAUDE.md                        ← this file
 ├── README.md                        ← public-facing
 ├── FEEDBACK.md                      ← required by Uniswap submission
+├── LICENSE                          ← MIT
 ├── pnpm-workspace.yaml
 ├── tsconfig.base.json
 ├── vitest.config.ts
+├── eslint.config.mjs
 ├── .env.example
+├── .npmrc                           ← gitignored; uses ${NPM_TOKEN} from .env
 └── .github/workflows/ci.yml
 ```
 
@@ -311,6 +330,21 @@ interface SignerAdapter {
 - Don't add multi-agent comms (that's the AXL stretch goal)
 - Don't add features the library doesn't need to demonstrate
 
+### 6.4 Demo scenes (recordable)
+
+The example ships five scripted scenes under `examples/multi-step-uniswap-agent/src/demo/`. Each is self-contained, banner-styled, and uses real `@openacid/*` symbols — no mocks. The four in-memory scenes run in seconds against `MemoryStorageAdapter` + `MemorySigner`; the live scene runs one tick of the rebalancer against real Base Sepolia + 0G Galileo + Sepolia ENS, then polls the ENS resolver until `receipt.latest` reflects the new callId.
+
+```bash
+pnpm --filter @openacid/example-uniswap-agent demo:a      # Atomicity
+pnpm --filter @openacid/example-uniswap-agent demo:c      # Consistency
+pnpm --filter @openacid/example-uniswap-agent demo:i      # Isolation
+pnpm --filter @openacid/example-uniswap-agent demo:d      # Durability
+pnpm --filter @openacid/example-uniswap-agent demo:live   # ★ real Base Sepolia + 0G + ENS readback
+./scripts/demo.sh                                         # orchestrator: A/C/I/D back-to-back
+```
+
+Recording flow per `examples/multi-step-uniswap-agent/README.md`: the in-memory scenes carry the first ~2 minutes of a 3-minute video; `demo:live` carries the closing 30-40 seconds with the on-chain readback as the punchline. The live scene has a 90s polling window so it tolerates Sepolia's 12s block time without flaking.
+
 ---
 
 ## 7. Adding a New Adapter
@@ -442,9 +476,10 @@ These are the locked tracks. See PRD §10 for the full breakdown.
   - ☑ MIT LICENSE
   - ☑ PRD.md / CLAUDE.md
   - ☑ npm packages published — 5 packages × 4 versions (`0.1.0 → 0.1.1 → 0.1.2 → 0.2.0`)
+  - ☑ Demo scenes scripted — A/C/I/D in-memory + `demo:live` against real chains; `scripts/demo.sh` orchestrator; recording walkthrough in `examples/.../README.md`. **Two-command record flow:** `./scripts/demo.sh` then `pnpm --filter @openacid/example-uniswap-agent demo:live`.
   - ☐ Architecture diagram (single image)
-  - ☐ Demo video (≤3 min, A/C/I/D scenes per PRD §10.3)
-  - ☐ Live demo link
+  - ☐ Demo video recorded (≤3 min)
+  - ☐ Live demo link (host the README + a Loom of the recorded session)
   - ☐ GitHub repo public + ETHGlobal submission form
 
 When in doubt about scope, dependencies, or "should I cut this?" — open `PRD.md`. The cut list is in §11.x there.
