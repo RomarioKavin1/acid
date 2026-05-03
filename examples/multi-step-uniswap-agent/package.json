@@ -1,0 +1,27 @@
+{
+  "name": "@openacid/example-uniswap-agent",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Reference agent: ACID-wrapped Uniswap V4 rebalancer on Base Sepolia.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/main.ts",
+    "dry-run": "tsx src/main.ts --dry-run",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@openacid/acid": "workspace:*",
+    "@openacid/adapter-memory": "workspace:*",
+    "@openacid/adapter-viem": "workspace:*",
+    "@openacid/adapter-0g-storage": "workspace:*",
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.2",
+    "vitest": "^3.0.0"
+  }
+}

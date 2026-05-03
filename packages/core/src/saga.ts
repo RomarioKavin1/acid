@@ -10,8 +10,8 @@ import { tagWrapper } from "./compose.js";
 import { canonicalJson } from "./canonical.js";
 
 export interface SagaOpts<A> {
-  steps: SagaStep[];
-  compensations?: Record<string, CompensationFn>;
+  steps: SagaStep<A>[];
+  compensations?: Record<string, CompensationFn<A>>;
   storage: StorageAdapter;
   onPartialFailure?: "compensate" | "halt" | "retry-forward";
   namespace?: string;
@@ -241,8 +241,8 @@ async function runCompensations<A>(
   storage: StorageAdapter,
   namespace: string,
   sagaId: string,
-  steps: SagaStep[],
-  compensations: Record<string, CompensationFn>,
+  steps: SagaStep<A>[],
+  compensations: Record<string, CompensationFn<A>>,
   state: CompensatingState,
   args: A,
 ): Promise<void> {

@@ -16,9 +16,9 @@ export interface Receipt {
   cid: string;
 }
 
-export interface SagaStep {
+export interface SagaStep<A = unknown> {
   id: string;
-  do: (ctx: SagaContext) => Promise<unknown>;
+  do: (ctx: SagaContext<A>) => Promise<unknown>;
   compensateOn?: "failure" | "never";
 }
 
@@ -29,8 +29,8 @@ export interface SagaContext<A = unknown> {
   results: Record<string, unknown>;
 }
 
-export type CompensationFn = (
-  ctx: SagaContext,
+export type CompensationFn<A = unknown> = (
+  ctx: SagaContext<A>,
   stepResult: unknown,
 ) => Promise<void>;
 

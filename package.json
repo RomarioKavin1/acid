@@ -13,7 +13,7 @@
     "build": "pnpm -r build",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "pnpm --filter @openacid/acid build && pnpm -r typecheck",
+    "typecheck": "pnpm --filter @openacid/acid --filter @openacid/adapter-memory --filter @openacid/adapter-viem --filter @openacid/adapter-0g-storage build && pnpm -r typecheck",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
@@ -26,5 +26,10 @@
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.16.0",
     "vitest": "^3.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "viem": "^2.21.0"
+    }
   }
 }
