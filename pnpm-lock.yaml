@@ -52,6 +52,24 @@ importers:
         specifier: ^3.0.0
         version: 3.2.4(@types/node@22.19.17)
 
+  packages/adapter-viem:
+    devDependencies:
+      '@openacid/acid':
+        specifier: workspace:*
+        version: link:../core
+      tsup:
+        specifier: ^8.3.5
+        version: 8.5.1(postcss@8.5.13)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      viem:
+        specifier: ^2.21.0
+        version: 2.48.8(typescript@5.9.3)
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.4(@types/node@22.19.17)
+
   packages/core:
     dependencies:
       viem:

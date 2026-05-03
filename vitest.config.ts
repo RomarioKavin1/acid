@@ -21,6 +21,10 @@ export default defineConfig({
         here,
         "packages/adapter-memory/src/index.ts",
       ),
+      "@openacid/adapter-viem": resolve(
+        here,
+        "packages/adapter-viem/src/index.ts",
+      ),
     },
   },
 });
