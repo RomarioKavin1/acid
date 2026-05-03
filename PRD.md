@@ -16,7 +16,7 @@ ACID is the **durable execution layer for AI agents that hold real money**. It b
 The library exposes four composable primitives:
 
 ```ts
-import { saga, invariant, idempotent, receipted } from 'acid'
+import { saga, invariant, idempotent, receipted } from '@openacid/acid'
 
 const action = receipted(           // D — signed durable receipts
   invariant({ pre, post },          // C — invariants enforced at boundaries
@@ -102,7 +102,7 @@ These caveats live prominently in the README's *Limitations* section. They earn 
 - Ship four composable primitives as one npm package
 - Reference storage adapter for **0G Storage** + in-memory adapter for tests
 - Reference chain adapter for **viem** (EVM)
-- One example agent built on **OpenClaw**, deployed on **0G Compute**, executing a multi-step Uniswap V4 swap saga
+- One example agent (plain TS loop + viem) deployed with reasoning on **0G Compute**, executing a multi-step Uniswap V4 swap saga on Base Sepolia
 - ENS subname per agent; receipts published as ENS text records
 - README + 4-scene demo video + working live demo
 - ≥ 80% test coverage of pure logic; integration tests for crash recovery
@@ -192,7 +192,7 @@ Profile: TypeScript-fluent, comfortable with viem/ethers, building on OpenClaw /
 ```
 acid/                              ← monorepo (pnpm workspaces)
 ├── packages/
-│   ├── core/                      ← @acid/core (or just `acid`)
+│   ├── core/                      ← @openacid/acid
 │   │   ├── src/
 │   │   │   ├── idempotent.ts
 │   │   │   ├── saga.ts
@@ -205,10 +205,10 @@ acid/                              ← monorepo (pnpm workspaces)
 │   │   │   └── types.ts
 │   │   └── package.json
 │   │
-│   ├── adapter-memory/            ← @acid/adapter-memory
-│   ├── adapter-0g-storage/        ← @acid/adapter-0g-storage
-│   ├── adapter-viem/              ← @acid/adapter-viem
-│   └── adapter-ens/               ← @acid/adapter-ens (receipt-as-ENS-text-record)
+│   ├── adapter-memory/            ← @openacid/adapter-memory
+│   ├── adapter-0g-storage/        ← @openacid/adapter-0g-storage
+│   ├── adapter-viem/              ← @openacid/adapter-viem
+│   └── adapter-ens/               ← @openacid/adapter-ens (receipt-as-ENS-text-record)
 │
 ├── examples/
 │   └── multi-step-uniswap-agent/  ← OpenClaw + 0G + Uniswap V4 demo agent
@@ -426,8 +426,8 @@ interface SignerAdapter {
 
 ### 8.3 Fallback adapters
 
-- `@acid/adapter-memory` — in-process, ephemeral, for tests only
-- `@acid/adapter-redis` — v1, for non-web3 deployments
+- `@openacid/adapter-memory` — in-process, ephemeral, for tests only
+- `@openacid/adapter-redis` — v1, for non-web3 deployments
 
 ---
 
@@ -467,13 +467,13 @@ const rebalance = receipted({
 }))))
 ```
 
-### 9.2 Built on OpenClaw
+### 9.2 Plain TS loop + viem
 
-The example agent is an OpenClaw module that imports ACID for its action layer. OpenClaw handles reasoning + tool selection; ACID handles durable execution.
+The example agent is a plain TypeScript service: a `setInterval` loop that polls balances, calls 0G Compute for the rebalance decision, and dispatches the multi-step swap saga via viem. ACID wraps the dispatch; the loop owns scheduling. Phase 0 evaluation showed OpenClaw is a personal-assistant runtime (channel/message-driven) and is the wrong shape for an autonomous rebalancer; the framework-agnostic library positioning is preserved either way.
 
 ### 9.3 Identity & receipts via ENS
 
-- Agent has subname: `alice-bot.acid.eth` (or similar)
+- Agent has subname: `alice-bot.openacid.eth` (or similar)
 - Text records:
   - `receipt.latest` → CID of most recent receipt
   - `receipt.head` → CID of current chain head
@@ -517,9 +517,9 @@ The example agent is an OpenClaw module that imports ACID for its action layer. 
 
 #### 10.2.3 ENS Creative Track
 
-- Parent name: `acid.eth` (or similar; `npm`-style namespace)
+- Parent name: `openacid.eth` (`acid.eth` is registered since 2019; see §14 q11)
 - Subname registrar deployed
-- Per-agent subname: `<agent>.acid.eth`
+- Per-agent subname: `<agent>.openacid.eth`
 - Text records carry receipt CIDs (`receipt.latest`, `receipt.head`)
 - Demo: live ENS resolver lookup → receipt CID → receipt content in 0G Storage
 - "Verifiable activity log via DNS-style ENS resolution" is the creative angle
@@ -581,7 +581,7 @@ The work decomposes into **seven phases** ordered by dependency. Each phase prod
 
 Verifications that must happen before Phase 1 starts. Failures here change the plan.
 
-- Confirm `acid` available on npm; if not, fall back to `@acid-lib/core` or `acidjs`
+- Confirm `acid` available on npm; if not, fall back to `@openacid/acid` or `acidjs`
 - Confirm `acid.eth` (or fallback parent name) available on ENS
 - Confirm `acid.ai` domain available
 - Verify 0G Storage SDK quickstart works (write a blob, read it back)
@@ -700,7 +700,7 @@ The web3-native pieces that complete the submission story.
 - Example agent gets a subname; receipts publish into its text records
 - Live ENS resolver demo: `dig`/`ens-resolve` returns the latest receipt CID, which fetches from 0G Storage
 
-**Deliverable:** any third party can ENS-resolve `<agent>.acid.eth`, fetch the latest receipt, and verify the signature.
+**Deliverable:** any third party can ENS-resolve `<agent>.openacid.eth`, fetch the latest receipt, and verify the signature.
 **Gate:** live demo from a clean machine works without library installed.
 
 ### Phase 7 — Submission artifacts
@@ -743,7 +743,7 @@ Do **not** cut: the four core primitives, the memory adapter, the example agent,
 | Uniswap V4 multicall has surprises on testnet | Medium | Medium | V3 pathway as fallback; FEEDBACK.md is *strengthened* by hitting friction |
 | ENS testnet flakiness | Low | Medium | Deploy early in Phase 6; fall back to mainnet read-only resolution if testnet broken |
 | Demo recording fails on stage | Low | High | Pre-record golden-path video in Phase 7; live demo only as bonus |
-| Naming conflict on `acid` package | High | Low | Phase 0 verifies; fall back to `@acid-lib/core`; tagline carries the brand regardless |
+| Naming conflict on `acid` package | High | Low | Phase 0 verifies; fall back to `@openacid/acid`; tagline carries the brand regardless |
 | Scope creep from "let's add X" temptation | High | High | Cut list (§11.x) is explicit; review at every phase gate |
 | Compensation logic is buggy in unusual failure modes | Medium | High | Property-based tests in Phase 2; document only the supported modes; mark edge cases as v1 |
 | Reorg during demo invalidates "successful" tx | Low | High | Use 1+ confirmation finality on stable testnet; pre-recorded golden path |
@@ -782,16 +782,17 @@ Do **not** cut: the four core primitives, the memory adapter, the example agent,
 
 | # | Question | Resolve before | Status |
 |---|---|---|---|
-| 1 | npm package name: `acid` vs `@acid-lib/core` vs other? | Phase 1 | **Resolved: `acid`** |
-| 2 | Domain: `acid.ai` — available? | Phase 7 | Non-blocking |
-| 3 | Target chain for example: Base, Unichain, or 0G Chain only? | Phase 5 | **Resolved: 0G Chain is the primary chain (ReceiptRegistry, receipts, storage, compute). Base is the swap chain for the Uniswap V4 example (Uniswap V4 is not deployed on 0G Chain).** |
-| 4 | OpenClaw native or build a thin compat shim? | Phase 5 | Non-blocking |
-| 5 | iNFT minting in v0 or defer to v1? | Phase 6 | Non-blocking |
-| 6 | Pin which LLM (qwen3.6-plus / GLM-5-FP8) for the demo agent? | Phase 5 | Non-blocking |
-| 7 | Logo / wordmark — DIY or use a generator? | Phase 7 | Non-blocking |
-| 8 | Receipt signing scheme: EIP-191 personal_sign, EIP-712 typed, or raw secp256k1? | Phase 2 | **Resolved: EIP-712 typed data signing. Reasons: (1) `ReceiptRegistry.sol` can call `ecrecover(structHash, v, r, s)` natively; (2) domain separator includes `chainId` (0G Chain = 16600) preventing cross-chain replay; (3) Receipt struct fields are human-readable in the signature — auditors see what was signed. viem `signTypedData` / `verifyTypedData` cover the full impl.** |
-| 9 | Saga state size limits — what's the upper bound for a single saga in 0G Storage? | Phase 4 | Non-blocking |
-| 10 | License — MIT, Apache-2.0, or AGPL? | Phase 7 | Non-blocking |
+| 1 | npm package name: `acid` vs `@openacid/acid` vs other? | Phase 1 | **Resolved: `@openacid/acid`.** Phase 0 verified `acid` unscoped is occupied on npm by an abandoned package (`phreax/acid@0.2.6`). Scoped fallback under `@openacid`. Repo, docs, CLI, and brand keep the `acid` identity. |
+| 2 | Domain: `acid.ai` — available? | Phase 7 | **Resolved: defer.** `acid.ai` is taken (NameCheap, expires 2027). Brand survives via tagline + GitHub + npm + ENS resolver. Placeholder `openacid.dev` if a domain becomes necessary for v0 marketing. |
+| 3 | Target chain for example: Base, Unichain, or 0G Chain only? | Phase 5 | **Resolved: 0G Chain (Galileo testnet, chainId 16602) is the primary chain** for `ReceiptRegistry`, receipts, storage, and compute. **Base Sepolia (chainId 84532) is the swap chain** for the Uniswap V4 example (V4 is not deployed on 0G Chain). Both have full V4 deployments verified in Phase 0. |
+| 4 | OpenClaw native or build a thin compat shim? | Phase 5 | **Resolved: drop OpenClaw; example agent is a plain TypeScript loop + viem.** Phase 0 review of OpenClaw's `AGENTS.md` showed it is a personal-assistant runtime (channel/message-driven), not a goal/tool-driven agent framework. Wrong shape for an autonomous rebalancer. PRD §12 already named this fallback as the mitigation; invoke it now. ACID itself stays framework-agnostic, so the demo's framework choice doesn't affect the library. |
+| 5 | iNFT minting in v0 or defer to v1? | Phase 6 | **Resolved: defer to v1.** Submission §10.4 reads "At least one minted iNFT **or** live-resolvable agent identity" — the ENS subname + receipt text records satisfy the OR-clause. Skipping iNFT keeps Phase 6 scope tight. |
+| 6 | Pin which LLM (qwen3.6-plus / GLM-5-FP8) for the demo agent? | Phase 5 | **Resolved: resolve at Phase 5 via runtime `broker.inference.getServiceMetadata(providerAddress)`.** Phase 0 found 0G Compute docs explicitly state "the provider and model catalog changes frequently"; pinning a static identifier in the PRD is brittle. Pin the chosen model in `.env.local` once smoke-tested. **Local-dev fallback:** Anthropic Claude Sonnet 4.6 via the Anthropic SDK when 0G Compute creds aren't present. |
+| 7 | Logo / wordmark — DIY or use a generator? | Phase 7 | **Resolved: defer.** Plain monospace `acid` wordmark plus the four-letter A.C.I.D. motif (already used in §10.3 demo script) is enough for the v0 submission. No designer-time required. |
+| 8 | Receipt signing scheme: EIP-191 personal_sign, EIP-712 typed, or raw secp256k1? | Phase 2 | **Resolved: EIP-712 typed data signing.** Reasons: (1) `ReceiptRegistry.sol` can call `ecrecover(structHash, v, r, s)` natively; (2) domain separator includes `chainId` (0G Chain = 16602) preventing cross-chain replay; (3) Receipt struct fields are human-readable in the signature — auditors see what was signed. viem `signTypedData` / `verifyTypedData` cover the full impl. |
+| 9 | Saga state size limits — what's the upper bound for a single saga in 0G Storage? | Phase 4 | **Resolved: 1 MB soft warn, 10 MB hard error; chunked-stream above 1 MB via `StorageAdapter.stream`.** 0G Storage supports far more than 10 MB, but a saga whose state crosses 1 MB is almost certainly a code smell (either the inputs/outputs aren't being hashed, or the saga should be split). Document the warning in the README's "Limitations." |
+| 10 | License — MIT, Apache-2.0, or AGPL? | Phase 7 | **Resolved: MIT.** Maximum adoption, no patent-clause friction, matches the dependency norm in npm/TypeScript ecosystem. Apache-2.0's patent grant is nice but uncommon in JS-land; AGPL would kill library adoption outright. |
+| 11 | ENS parent name — `acid.eth` is taken; fallback? | Phase 6 | **Resolved: `openacid.eth`** (matches the npm `@openacid` scope). Phase 0 ENS API checks (ensideas, web3.bio, ensdata) consistently report no resolution, suggesting unregistered. Verify on-chain via ENS Registry `owner(node)` before final claim in Phase 6. Fallback if unexpectedly taken: `acid-agents.eth`. |
 
 ---
 

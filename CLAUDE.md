@@ -15,13 +15,15 @@ The library is being built for submission to the **ETHGlobal Open Agents** event
 The four primitives:
 
 ```ts
-import { saga, invariant, idempotent, receipted } from 'acid'
+import { saga, invariant, idempotent, receipted } from '@openacid/acid'
 
 const action = receipted(           // D — signed durable receipts
   invariant({ pre, post },          // C — invariants enforced at boundaries
     idempotent(                     // I — concurrent + crash-safe
       saga(steps, compensations))))// A — atomic multi-step rollback
 ```
+
+> The unscoped `acid` npm name is occupied by an unrelated abandoned package; we publish under the `@openacid` scope. The brand stays `acid`. See PRD §14 q1.
 
 For full design rationale, problem framing, and per-primitive semantics, see `PRD.md`.
 
@@ -41,26 +43,34 @@ pnpm lint                     # eslint
 pnpm dev                      # Run the example agent against testnets
 ```
 
-Required env (`.env.local`, see `.env.example` once present):
+Required env (`.env.local`, see `.env.example`):
 
 ```
-# 0G
-ZEROG_STORAGE_RPC=
-ZEROG_COMPUTE_API_KEY=
-ZEROG_CHAIN_RPC=
+# 0G Storage SDK (@0gfoundation/0g-storage-ts-sdk)
+ZEROG_STORAGE_RPC=https://evmrpc-testnet.0g.ai
+ZEROG_STORAGE_INDEXER_RPC=
 ZEROG_CHAIN_PRIVATE_KEY=
 
-# EVM (example agent target)
-BASE_RPC=
-BASE_PRIVATE_KEY=
+# 0G Chain — Galileo testnet, chainId 16602
+ZEROG_CHAIN_RPC=https://evmrpc-testnet.0g.ai
 
-# ENS (Phase 6+)
-ENS_PARENT_NAME=acid.eth      # or fallback
+# 0G Compute (@0gfoundation/0g-compute-ts-sdk)
+# Auth is on-chain account (signed requests) OR CLI-issued Bearer token:
+#   0g-compute-cli inference get-secret --provider <PROVIDER_ADDRESS>
+ZEROG_COMPUTE_PROVIDER_ADDRESS=
+ZEROG_COMPUTE_BEARER=
+LLM_MODEL=                    # resolved at runtime via broker.inference.getServiceMetadata()
+
+# Local-dev LLM fallback (when 0G Compute creds aren't available)
+ANTHROPIC_API_KEY=
+
+# EVM testnet (Base Sepolia for Uniswap V4 swap)
+BASE_SEPOLIA_RPC=https://sepolia.base.org
+EVM_PRIVATE_KEY=
+
+# ENS (Phase 6+) — `acid.eth` is taken; fallback parent name
+ENS_PARENT_NAME=openacid.eth
 ENS_REGISTRAR_PRIVATE_KEY=
-
-# LLM (model used by the example agent; pinned at Phase 5)
-LLM_PROVIDER=zerog-compute    # or anthropic, openai for fallback
-LLM_MODEL=qwen3.6-plus        # or GLM-5-FP8
 ```
 
 ---
@@ -75,16 +85,16 @@ LLM_MODEL=qwen3.6-plus        # or GLM-5-FP8
 | Tests | **vitest 3** | jsdom not needed; node env |
 | Lint | **eslint** flat config + **prettier** | |
 | Chain (EVM) | **viem 2.x** | The chain adapter wraps viem |
-| Crypto/signing | **viem** + **@noble/curves** | EIP-712 typed data signing for receipts (`signTypedData` / `verifyTypedData` via viem); domain separator uses 0G Chain chainId (16600) |
-| Storage SDK (primary backend) | **0G Storage SDK** | KV for in-flight markers, blob for receipts |
-| LLM (example agent) | **0G Compute** | `qwen3.6-plus` or `GLM-5-FP8`; pinned in Phase 5 |
-| Agent framework (example) | **OpenClaw** | The example agent imports OpenClaw; ACID itself is framework-agnostic |
+| Crypto/signing | **viem** | EIP-712 typed data signing for receipts (`signTypedData` / `verifyTypedData`); domain separator uses 0G Chain chainId 16602 |
+| Storage SDK (primary backend) | **`@0gfoundation/0g-storage-ts-sdk`** | KV (`Batcher` / `KvClient`) for in-flight markers, blob (`indexer.upload/download` via `ZgFile`) for receipts |
+| LLM (example agent) | **`@0gfoundation/0g-compute-ts-sdk`** | Model catalog dynamic; resolve at runtime via `broker.inference.getServiceMetadata()`. Local-dev fallback: Anthropic Claude Sonnet 4.6 |
+| Agent runtime (example) | **plain TS loop + viem** | OpenClaw evaluated and dropped in Phase 0 (channel-driven, wrong shape). ACID itself stays framework-agnostic |
 | Smart contracts | **Solidity 0.8.x**, **Foundry** | Only `ReceiptRegistry.sol` for v0 |
 | ENS | **viem ENS helpers** + custom subname registrar | Receipts published as text records |
 | CI | GitHub Actions | typecheck + test + build on every commit |
 | License | MIT (planned) | Final decision in Phase 7 |
 
-`acid` is the planned package name. Falls back to `@acid-lib/core` if taken — see PRD §14 q1.
+Published name is **`@openacid/acid`** (`acid` unscoped is occupied by an unrelated abandoned package). Repo and brand keep the `acid` identity.
 
 ---
 
@@ -93,7 +103,7 @@ LLM_MODEL=qwen3.6-plus        # or GLM-5-FP8
 ```
 acid/                                ← repo root, monorepo
 ├── packages/
-│   ├── core/                        ← 'acid' (or @acid/core)
+│   ├── core/                        ← @openacid/acid
 │   │   ├── src/
 │   │   │   ├── idempotent.ts        ← ★ idempotency primitive
 │   │   │   ├── saga.ts              ← ★ atomic multi-step primitive
@@ -116,15 +126,15 @@ acid/                                ← repo root, monorepo
 │   │   ├── tests/                   ← vitest, colocated where useful
 │   │   └── package.json
 │   │
-│   ├── adapter-memory/              ← @acid/adapter-memory  (used by all tests)
-│   ├── adapter-0g-storage/          ← @acid/adapter-0g-storage  (primary durability backend)
-│   ├── adapter-viem/                ← @acid/adapter-viem  (ChainAdapter on viem)
-│   └── adapter-ens/                 ← @acid/adapter-ens  (mirrors receipts to ENS text records)
+│   ├── adapter-memory/              ← @openacid/adapter-memory  (used by all tests)
+│   ├── adapter-0g-storage/          ← @openacid/adapter-0g-storage  (primary durability backend)
+│   ├── adapter-viem/                ← @openacid/adapter-viem  (ChainAdapter on viem)
+│   └── adapter-ens/                 ← @openacid/adapter-ens  (mirrors receipts to ENS text records)
 │
 ├── examples/
 │   └── multi-step-uniswap-agent/    ← ★ THE DEMO AGENT
 │       ├── src/
-│       │   ├── agent.ts             ← OpenClaw agent
+│       │   ├── agent.ts             ← plain TS loop + viem
 │       │   ├── tools/               ← approve, swap, stake
 │       │   ├── invariants.ts        ← agent-specific invariants
 │       │   └── main.ts
@@ -284,7 +294,7 @@ interface SignerAdapter {
 - When drift > threshold, executes a multi-step swap saga: `approve → swap → (optional) stake`
 - All actions wrapped in `receipted(invariant(idempotent(saga(...))))`
 - Reasoning runs on 0G Compute
-- Receipts persist to 0G Storage; `ReceiptRegistry.sol` anchors merkle roots on 0G Chain (chainId 16600)
+- Receipts persist to 0G Storage; `ReceiptRegistry.sol` anchors merkle roots on 0G Chain (Galileo testnet, chainId 16602)
 - Latest receipt CID published to ENS subname text record
 
 ### 6.2 Why it's the right demo
@@ -343,7 +353,7 @@ If you're considering it, write a design doc in `docs/proposals/` first. Referen
 - **Chain reconciliation can return `'replaced'`.** When a user bumps gas, the original tx is dead. The library surfaces this; do not hide it. Silent re-broadcast on a "replaced" tx leads to double-spend.
 - **0G Storage is content-addressed.** Receipt CIDs are derived from receipt content. If you mutate a receipt, the CID changes — i.e., you've created a new receipt, not modified one. There is no "update."
 - **No auto-save / no auto-checkpoint.** The library is explicit. Users opt into wrapping; nothing magic happens behind the scenes.
-- **The library is framework-agnostic.** The example uses OpenClaw, but `acid` itself does not import OpenClaw. Don't introduce framework-coupling in the core packages.
+- **The library is framework-agnostic.** The example agent is a plain TS loop + viem. The core `@openacid/acid` package must not import any agent framework (OpenClaw, LangChain, CrewAI, etc.); adapters and primitives stay decoupled from runtime style.
 - **No `any` in core.** Adapter packages can use `any` for SDK glue with comments explaining; core must be fully typed.
 - **Receipts may be large.** Saga state with multi-step inputs and outputs can exceed 1MB. Storage adapters should support `stream` for these cases or accept chunked `put`. Memory adapter is fine being naive.
 
@@ -386,7 +396,7 @@ These are the locked tracks. See PRD §10 for the full breakdown.
 
 ### 11.3 ENS Creative
 
-- ENS parent name (e.g., `acid.eth`) registered
+- ENS parent name (`openacid.eth` per PRD §14 q11) registered
 - Subname registrar deployed; per-agent subnames assigned
 - Receipts mirrored to ENS text records (`receipt.latest`, `receipt.head`, `agent.signer`)
 - Demo: third-party ENS resolver returns receipt CID without library installed
@@ -404,14 +414,18 @@ These are the locked tracks. See PRD §10 for the full breakdown.
 
 > Update this section as the project progresses.
 
-- **Phase 0 — Pre-flight:** in progress
-  - ☐ Verify `acid` npm availability
-  - ☐ Verify `acid.eth` ENS availability
-  - ☐ Verify `acid.ai` domain availability
-  - ☐ 0G Storage SDK smoke test
-  - ☐ 0G Compute smoke test
-  - ☐ OpenClaw "hello world"
-  - ☐ Uniswap V4 testnet swap via viem
+- **Phase 0 — Pre-flight:** 8 of 9 items resolved; 3 blocked on creds
+  - ☑ `acid` npm availability — **TAKEN**, falling back to `@openacid/acid` (PRD §14 q1)
+  - ☑ `acid.eth` ENS availability — **TAKEN**; fallback parent `openacid.eth` (PRD §14 q11)
+  - ☑ `acid.ai` domain availability — **TAKEN**; deferred (PRD §14 q2)
+  - ☑ 0G Galileo testnet RPC reachable — chainId **16602**, RPC `https://evmrpc-testnet.0g.ai`, faucet `https://faucet.0g.ai` (0.1 0G/wallet/day), explorer `https://chainscan-galileo.0g.ai`
+  - ☑ Base / Unichain Sepolia RPCs reachable — chainIds 84532 / 1301; both have full V4 deployments
+  - ☑ 0G SDK quickstarts reviewed — Storage `@0gfoundation/0g-storage-ts-sdk` (KV + blob), Compute `@0gfoundation/0g-compute-ts-sdk` (on-chain or Bearer auth, dynamic model catalog)
+  - ☑ Uniswap V4 testnet entry confirmed — PoolManager / PositionManager / Universal Router / StateView / V4Quoter present on Base Sepolia and Unichain Sepolia
+  - ☑ OpenClaw evaluated and **dropped** (channel-driven runtime, wrong shape; see PRD §14 q4)
+  - ☐ 0G Storage SDK smoke test — blocked on funded testnet wallet + `.env.local`
+  - ☐ 0G Compute SDK smoke test — blocked on creds; also resolves the runtime model pin (PRD §14 q6)
+  - ☐ Uniswap V4 testnet swap via viem on Base Sepolia — blocked on funded wallet
 - **Phase 1 — Foundation:** not started
 - **Phase 2 — Core primitives:** not started
 - **Phase 3 — Chain awareness:** not started
