@@ -25,6 +25,10 @@ export default defineConfig({
         here,
         "packages/adapter-viem/src/index.ts",
       ),
+      "@openacid/adapter-0g-storage": resolve(
+        here,
+        "packages/adapter-0g-storage/src/index.ts",
+      ),
     },
   },
 });
