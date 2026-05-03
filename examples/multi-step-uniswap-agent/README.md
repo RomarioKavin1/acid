@@ -7,11 +7,12 @@ The reference agent for the **OpenACID** library. A long-running portfolio rebal
 Each scene is a self-contained script with banner output that's easy to read on a screen recording. They run in-memory only — no funded wallets needed.
 
 ```bash
-pnpm --filter @openacid/example-uniswap-agent demo:a    # Atomicity
-pnpm --filter @openacid/example-uniswap-agent demo:c    # Consistency
-pnpm --filter @openacid/example-uniswap-agent demo:i    # Isolation
-pnpm --filter @openacid/example-uniswap-agent demo:d    # Durability
-pnpm --filter @openacid/example-uniswap-agent demo:all  # all four in order
+pnpm --filter @openacid/example-uniswap-agent demo:a     # Atomicity (in-memory)
+pnpm --filter @openacid/example-uniswap-agent demo:c     # Consistency (in-memory)
+pnpm --filter @openacid/example-uniswap-agent demo:i     # Isolation (in-memory)
+pnpm --filter @openacid/example-uniswap-agent demo:d     # Durability (in-memory)
+pnpm --filter @openacid/example-uniswap-agent demo:all   # all four in order
+pnpm --filter @openacid/example-uniswap-agent demo:live  # ★ live tick: Base Sepolia + 0G + ENS readback
 ```
 
 Or use the orchestrator with narration pauses (PAUSE=N seconds between scenes):
@@ -30,6 +31,7 @@ PAUSE=5 ./scripts/demo.sh     # longer pauses for narration
 | **C — Consistency** | A saga "succeeds" mechanically but leaves a 5 USDC orphan allowance. The `noOrphanAllowances` postcondition rejects the action with severity `critical`. | `invariant` + `noOrphanAllowances` |
 | **I — Isolation** | Two parallel `action()` calls with identical args. The second blocks on the in-flight marker; the underlying saga runs once; both calls receive the same result. | `idempotent` |
 | **D — Durability** | Saga runs in "process A", receipt is persisted, "process A is killed", "process B" restarts with the same args. No re-broadcast. The persisted receipt's EIP-712 signature still recovers to the signer's address. | `receipted` + `verifyReceipt` |
+| **LIVE** | One tick of the rebalancer against **real Base Sepolia** balances, **real 0G Galileo** receipt blob upload, and **real Sepolia ENS** text record write. Reads `openacid.eth/receipt.latest` before and after; polls until the resolver reflects the new callId. | `RebalancingAgent.tick` + `EnsReceiptMirror` + viem ENS resolver |
 
 ## Running the live agent
 
@@ -77,8 +79,8 @@ Suggested narration & timing:
 | 0:15–0:50 | `demo:a` runs | "Atomicity. A multi-step swap saga, with one step deliberately failing. The library auto-runs compensations in reverse — the orphan allowance is gone." |
 | 0:50–1:25 | `demo:c` runs | "Consistency. The saga succeeds mechanically but leaves a non-zero allowance. The postcondition fires; the action is rejected." |
 | 1:25–1:55 | `demo:i` runs | "Isolation. Two parallel calls, same idempotency key. The second blocks; only one execution; both calls get the same result." |
-| 1:55–2:35 | `demo:d` runs | "Durability. The agent broadcasts, then crashes. On restart, no re-broadcast, no double-spend. The persisted receipt is signed and verifies." |
-| 2:35–3:00 | Live agent run + ENS query | `cast call <resolver> "text(bytes32,string)(string)" $(cast namehash openacid.eth) "receipt.latest"` — resolves to a real CID. |
+| 1:55–2:25 | `demo:d` runs | "Durability. The agent broadcasts, then crashes. On restart, no re-broadcast, no double-spend. The persisted receipt is signed and verifies." |
+| 2:25–3:05 | `demo:live` runs against real chains | "And here's the full pipeline live. Base Sepolia balance read, decision, saga, 0G Storage upload, ENS mirror — and now we're polling the resolver until it reflects the new callId. Verified — any third party can hit any ENS resolver and get this." |
 
 ## Architecture (per the rebalance action)
 

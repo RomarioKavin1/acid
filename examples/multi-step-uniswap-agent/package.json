@@ -12,6 +12,7 @@
     "demo:c": "tsx src/demo/consistency.ts",
     "demo:i": "tsx src/demo/isolation.ts",
     "demo:d": "tsx src/demo/durability.ts",
+    "demo:live": "tsx src/demo/live.ts",
     "demo:all": "tsx src/demo/atomicity.ts && tsx src/demo/consistency.ts && tsx src/demo/isolation.ts && tsx src/demo/durability.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
