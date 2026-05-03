@@ -132,9 +132,15 @@ forge script script/Deploy.s.sol \
 
 ## Submission artifacts
 
-- **0G Framework track** — agent runs on 0G Compute reasoning + 0G Storage receipts; `ReceiptRegistry.sol` deployed on 0G Chain
+- **0G Framework track** — agent runs on 0G Compute reasoning + 0G Storage receipts; **`ReceiptRegistry.sol` deployed on 0G Galileo at `0xd3E6277960025B4D0c161e20304a3a44231d0D1C`**
 - **Uniswap track** — see [`FEEDBACK.md`](./FEEDBACK.md); example agent rebalances via Uniswap V4 on Base Sepolia (V4 deployment addresses verified Phase 0)
-- **ENS Creative track** — receipts mirrored to per-agent ENS subname text records (`receipt.latest`, `receipt.head`); resolver-backed audit trail with no library install required
+- **ENS Creative track** — **`openacid.eth` registered on Sepolia ENS** with live `receipt.latest`, `receipt.head`, `agent.signer` text records mirrored from the agent on every receipt. Verifiable from any ENS resolver, no library install:
+  ```bash
+  cast call 0xE99638b40E4Fff0129D56f03b55b6bbC4BBE49b5 \
+    "text(bytes32,string)(string)" \
+    $(cast namehash openacid.eth) "receipt.latest" \
+    --rpc-url https://ethereum-sepolia-rpc.publicnode.com
+  ```
 
 See [`PRD.md`](./PRD.md) for full design rationale and [`CLAUDE.md`](./CLAUDE.md) for the operating manual.
 
