@@ -51,6 +51,13 @@ export {
 } from "./receipt.js";
 
 export {
+  inspectComposition,
+  checkComposition,
+  type AcidKind,
+  type CompositionWarning,
+} from "./compose.js";
+
+export {
   AcidError,
   NonDeterministicKeyError,
   IdempotentInFlightError,

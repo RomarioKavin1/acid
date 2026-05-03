@@ -1,5 +1,6 @@
 import type { Wrapper, InvariantContext, InvariantViolation } from "./types.js";
 import { InvariantViolationError } from "./errors.js";
+import { tagWrapper } from "./compose.js";
 
 export type InvariantOnViolation = "throw" | "compensate" | "log-only";
 
@@ -40,45 +41,48 @@ export function invariant<A, R>(opts: InvariantOpts<A, R>): Wrapper<A, R> {
     fnName = "anonymous",
   } = opts;
 
-  return (fn) => async (args: A) => {
-    const startedAt = Date.now();
-    const ctx: InvariantContext = { fnName, startedAt };
+  return (fn) => {
+    const wrapped = async (args: A): Promise<R> => {
+      const startedAt = Date.now();
+      const ctx: InvariantContext = { fnName, startedAt };
 
-    if (pre) {
-      const verdict = await pre(args, ctx);
-      const violation = normalizeVerdict(verdict, "pre-condition failed");
-      if (violation) {
-        await handleViolation(
-          violation,
-          "pre",
-          onViolation,
-          onLog,
-          compensate,
-          args,
-          undefined,
-        );
+      if (pre) {
+        const verdict = await pre(args, ctx);
+        const violation = normalizeVerdict(verdict, "pre-condition failed");
+        if (violation) {
+          await handleViolation(
+            violation,
+            "pre",
+            onViolation,
+            onLog,
+            compensate,
+            args,
+            undefined,
+          );
+        }
       }
-    }
 
-    const result = await fn(args);
+      const result = await fn(args);
 
-    if (post) {
-      const verdict = await post(args, result, ctx);
-      const violation = normalizeVerdict(verdict, "post-condition failed");
-      if (violation) {
-        await handleViolation(
-          violation,
-          "post",
-          onViolation,
-          onLog,
-          compensate,
-          args,
-          result,
-        );
+      if (post) {
+        const verdict = await post(args, result, ctx);
+        const violation = normalizeVerdict(verdict, "post-condition failed");
+        if (violation) {
+          await handleViolation(
+            violation,
+            "post",
+            onViolation,
+            onLog,
+            compensate,
+            args,
+            result,
+          );
+        }
       }
-    }
 
-    return result;
+      return result;
+    };
+    return tagWrapper(wrapped, "invariant", fn);
   };
 }
 

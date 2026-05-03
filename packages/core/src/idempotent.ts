@@ -5,6 +5,7 @@ import {
   IdempotentInFlightLostError,
   NonDeterministicKeyError,
 } from "./errors.js";
+import { tagWrapper } from "./compose.js";
 
 export type IdempotentInFlightMode = "block" | "return-pending" | "reject";
 
@@ -49,71 +50,74 @@ export function idempotent<A, R>(opts: IdempotentOpts<A, R>): Wrapper<A, R> {
     namespace = "idempotent",
   } = opts;
 
-  return (fn) => async (args) => {
-    const userKey = deriveKey(args);
+  return (fn) => {
+    const wrapped = async (args: A): Promise<R> => {
+      const userKey = deriveKey(args);
 
-    if (strictKeys) {
-      const second = deriveKey(args);
-      if (userKey !== second) {
-        throw new NonDeterministicKeyError([userKey, second]);
+      if (strictKeys) {
+        const second = deriveKey(args);
+        if (userKey !== second) {
+          throw new NonDeterministicKeyError([userKey, second]);
+        }
       }
-    }
 
-    const storageKey = `${namespace}:${userKey}`;
+      const storageKey = `${namespace}:${userKey}`;
 
-    const existing = await storage.get<Slot<R>>(storageKey);
-    if (existing?.status === "completed") {
-      return existing.result;
-    }
-    if (existing?.status === "in-flight") {
-      return await handleInFlight<R>(
-        storage,
-        storageKey,
-        userKey,
-        inFlight,
-        pollIntervalMs,
-        blockTimeoutMs,
-      );
-    }
-
-    const owner = randomOwner();
-    const claim: InFlightSlot = {
-      status: "in-flight",
-      startedAt: Date.now(),
-      owner,
-    };
-    const won = await storage.cas<Slot<R>>(storageKey, null, claim);
-    if (!won) {
-      const after = await storage.get<Slot<R>>(storageKey);
-      if (after?.status === "completed") return after.result;
-      return await handleInFlight<R>(
-        storage,
-        storageKey,
-        userKey,
-        inFlight,
-        pollIntervalMs,
-        blockTimeoutMs,
-      );
-    }
-
-    let result: R;
-    try {
-      result = await fn(args);
-    } catch (err) {
-      const release = await storage.cas<Slot<R>>(storageKey, claim, null as never);
-      if (!release) {
-        await storage.delete(storageKey);
+      const existing = await storage.get<Slot<R>>(storageKey);
+      if (existing?.status === "completed") return existing.result;
+      if (existing?.status === "in-flight") {
+        return await handleInFlight<R>(
+          storage,
+          storageKey,
+          userKey,
+          inFlight,
+          pollIntervalMs,
+          blockTimeoutMs,
+        );
       }
-      throw err;
-    }
 
-    const completed: CompletedSlot<R> = {
-      status: "completed",
-      result,
-      completedAt: Date.now(),
+      const owner = randomOwner();
+      const claim: InFlightSlot = {
+        status: "in-flight",
+        startedAt: Date.now(),
+        owner,
+      };
+      const won = await storage.cas<Slot<R>>(storageKey, null, claim);
+      if (!won) {
+        const after = await storage.get<Slot<R>>(storageKey);
+        if (after?.status === "completed") return after.result;
+        return await handleInFlight<R>(
+          storage,
+          storageKey,
+          userKey,
+          inFlight,
+          pollIntervalMs,
+          blockTimeoutMs,
+        );
+      }
+
+      let result: R;
+      try {
+        result = await fn(args);
+      } catch (err) {
+        const release = await storage.cas<Slot<R>>(
+          storageKey,
+          claim,
+          null as never,
+        );
+        if (!release) await storage.delete(storageKey);
+        throw err;
+      }
+
+      const completed: CompletedSlot<R> = {
+        status: "completed",
+        result,
+        completedAt: Date.now(),
+      };
+      await storage.put<Slot<R>>(storageKey, completed, { ttl });
+      return result;
     };
-    await storage.put<Slot<R>>(storageKey, completed, { ttl });
-    return result;
+    return tagWrapper(wrapped, "idempotent", fn);
   };
 }
 

@@ -6,6 +6,7 @@ import type {
   CompensationFn,
 } from "./types.js";
 import { SagaCompensationError, SagaStepError } from "./errors.js";
+import { tagWrapper } from "./compose.js";
 
 export interface SagaOpts<A> {
   steps: SagaStep[];
@@ -88,7 +89,7 @@ export function saga<A>(
     }
   }
 
-  return async (args: A) => {
+  const fn = async (args: A) => {
     const sagaId = sagaIdFromArgs(args);
     const stateKey = `${namespace}:${sagaId}`;
 
@@ -232,6 +233,7 @@ export function saga<A>(
     await storage.put<SagaState>(stateKey, completed);
     return state.results;
   };
+  return tagWrapper(fn, "saga", null);
 }
 
 async function runCompensations<A>(

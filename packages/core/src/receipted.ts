@@ -10,6 +10,7 @@ import {
   ZERO_BYTES32,
   type ReceiptDomain,
 } from "./receipt.js";
+import { tagWrapper } from "./compose.js";
 
 export interface ReceiptedOpts {
   storage: StorageAdapter;
@@ -34,8 +35,9 @@ export function receipted<A, R>(opts: ReceiptedOpts): Wrapper<A, R> {
     namespace = "receipt",
   } = opts;
 
-  return (fn) => async (args) => {
-    const startedAt = Date.now();
+  return (fn) => {
+    const wrapped = async (args: A): Promise<R> => {
+      const startedAt = Date.now();
     const inputHash = hashCanonical(args);
 
     const prevReceipt = prevReceiptKey
@@ -105,6 +107,8 @@ export function receipted<A, R>(opts: ReceiptedOpts): Wrapper<A, R> {
 
     if (thrown) throw thrown;
     return result;
+    };
+    return tagWrapper(wrapped, "receipted", fn);
   };
 }
 
