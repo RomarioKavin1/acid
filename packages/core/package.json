@@ -1,6 +1,6 @@
 {
   "name": "@openacid/acid",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Durable execution primitives for AI agents.",
   "license": "MIT",
   "type": "module",
