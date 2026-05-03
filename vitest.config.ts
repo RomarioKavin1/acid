@@ -29,6 +29,10 @@ export default defineConfig({
         here,
         "packages/adapter-0g-storage/src/index.ts",
       ),
+      "@openacid/adapter-ens": resolve(
+        here,
+        "packages/adapter-ens/src/index.ts",
+      ),
     },
   },
 });
