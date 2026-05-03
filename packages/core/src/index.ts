@@ -33,7 +33,10 @@ export {
   gasUnderCap,
   slippageBelow,
   noOrphanAllowances,
+  recipientWhitelist,
 } from "./invariants/index.js";
+
+export { withTimeout, TimeoutError, type WithTimeoutOpts } from "./with-timeout.js";
 
 export { receipted, type ReceiptedOpts } from "./receipted.js";
 

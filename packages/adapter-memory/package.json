@@ -1,6 +1,6 @@
 {
   "name": "@openacid/adapter-memory",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "In-memory StorageAdapter for tests. Not for production.",
   "license": "MIT",
   "type": "module",

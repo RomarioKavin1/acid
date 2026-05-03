@@ -1,6 +1,6 @@
 {
   "name": "@openacid/adapter-viem",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "viem-backed ChainAdapter and SignerAdapter for ACID.",
   "license": "MIT",
   "type": "module",
