@@ -104,14 +104,21 @@ memory       0g-storage   viem          (Phase 6)
 
 ## Reference contract
 
-`contracts/src/ReceiptRegistry.sol` deploys on 0G Galileo (chainId 16602). It anchors merkle roots over receipt batches and verifies receipts on-chain via `ecrecover` against the signer's address. 8 Foundry tests cover the merkle + signature path.
+`contracts/src/ReceiptRegistry.sol` is **deployed live on 0G Galileo (chainId 16602)** at:
+
+> **`0xd3E6277960025B4D0c161e20304a3a44231d0D1C`**
+>
+> Deployment tx: [`0x3dc372a467edbee7507f3bd90061874a8625f0efaf05eb62cd190779128687e1`](https://chainscan-galileo.0g.ai/tx/0x3dc372a467edbee7507f3bd90061874a8625f0efaf05eb62cd190779128687e1)
+
+It anchors merkle roots over receipt batches and verifies receipts on-chain via `ecrecover` against the signer's address. 8 Foundry tests cover the merkle + signature path.
 
 ```bash
 cd contracts
 forge test                          # local
 forge script script/Deploy.s.sol \
   --rpc-url $ZEROG_CHAIN_RPC \
-  --broadcast                       # deploy
+  --broadcast \
+  --priority-gas-price 3000000000   # 0G chain min priority fee
 ```
 
 ## Honest limitations

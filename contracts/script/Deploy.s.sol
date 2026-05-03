@@ -6,7 +6,11 @@ import {ReceiptRegistry} from "../src/ReceiptRegistry.sol";
 
 contract Deploy is Script {
     function run() external returns (ReceiptRegistry registry) {
-        uint256 pk = vm.envUint("ZEROG_CHAIN_PRIVATE_KEY");
+        string memory raw = vm.envString("ZEROG_CHAIN_PRIVATE_KEY");
+        if (bytes(raw).length == 64) {
+            raw = string.concat("0x", raw);
+        }
+        uint256 pk = vm.parseUint(raw);
         vm.startBroadcast(pk);
         registry = new ReceiptRegistry();
         vm.stopBroadcast();
