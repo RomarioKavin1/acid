@@ -100,10 +100,11 @@ export function saga<A>(
 
     if (state?.phase === "compensated" || state?.phase === "halted") {
       const step = steps[state.failedStepIndex];
-      throw new SagaStepError(step?.id ?? `step:${state.failedStepIndex}`, {
-        name: state.cause.name,
-        message: state.cause.message,
-      });
+      throw new SagaStepError(
+        step?.id ?? `step:${state.failedStepIndex}`,
+        { name: state.cause.name, message: state.cause.message },
+        { sagaId, attempt: state.attempt },
+      );
     }
 
     if (state?.phase === "running") {
@@ -151,6 +152,7 @@ export function saga<A>(
       throw new SagaStepError(
         failedStep?.id ?? `step:${state.failedStepIndex}`,
         state.cause,
+        { sagaId, attempt: state.attempt },
       );
     }
 
@@ -180,11 +182,11 @@ export function saga<A>(
             attempt: state.attempt,
           };
           await storage.put<SagaState>(stateKey, halted);
-          throw new SagaStepError(step.id, err);
+          throw new SagaStepError(step.id, err, { sagaId, attempt: state.attempt });
         }
 
         if (onPartialFailure === "retry-forward") {
-          throw new SagaStepError(step.id, err);
+          throw new SagaStepError(step.id, err, { sagaId, attempt: state.attempt });
         }
 
         const compensating: CompensatingState = {
@@ -212,7 +214,7 @@ export function saga<A>(
           phase: "compensated",
         };
         await storage.put<SagaState>(stateKey, final);
-        throw new SagaStepError(step.id, err);
+        throw new SagaStepError(step.id, err, { sagaId, attempt: state.attempt });
       }
 
       const advanced: RunningState = {
@@ -269,7 +271,10 @@ async function runCompensations<A>(
       await compFn(ctx, stepResult);
       await storage.put(compKey, { done: true });
     } catch (compErr) {
-      throw new SagaCompensationError(step.id, compErr);
+      throw new SagaCompensationError(step.id, compErr, {
+        sagaId,
+        attempt: state.attempt,
+      });
     }
   }
 }

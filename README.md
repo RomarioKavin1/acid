@@ -46,11 +46,21 @@ Agents that hold value silently lose money to a recurring class of failures that
 | **I**solation | Locking / MVCC | `idempotent(fn, key)` with in-flight tracking |
 | **D**urability | WAL + fsync + replication | `receipted(fn)` — signed chained receipts on 0G Storage |
 
-## Quick start
+## Install
+
+```bash
+npm i @openacid/acid                 # the four primitives
+npm i @openacid/adapter-memory       # for tests
+npm i @openacid/adapter-viem         # ChainAdapter + SignerAdapter on viem
+npm i @openacid/adapter-0g-storage   # receipts on 0G blob storage
+npm i @openacid/adapter-ens          # mirror receipts to ENS text records
+```
+
+## Quick start (this repo)
 
 ```bash
 pnpm install
-pnpm test               # 93 tests across the workspace + 8 forge tests
+pnpm test               # 97 vitest + 8 forge tests
 pnpm typecheck
 
 # Run the example agent against Base Sepolia (no funds needed)
