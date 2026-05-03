@@ -37,12 +37,27 @@ const PUBLIC_RESOLVER: Address =
 const BASE_REGISTRAR: Address =
   "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85";
 
+const REGISTRATION_TUPLE = {
+  components: [
+    { name: "label", type: "string" },
+    { name: "owner", type: "address" },
+    { name: "duration", type: "uint256" },
+    { name: "secret", type: "bytes32" },
+    { name: "resolver", type: "address" },
+    { name: "data", type: "bytes[]" },
+    { name: "reverseRecord", type: "uint8" },
+    { name: "referrer", type: "bytes32" },
+  ],
+  name: "registration",
+  type: "tuple",
+} as const;
+
 const CONTROLLER_ABI = [
   {
     type: "function",
     name: "available",
     stateMutability: "view",
-    inputs: [{ name: "name", type: "string" }],
+    inputs: [{ name: "label", type: "string" }],
     outputs: [{ type: "bool" }],
   },
   {
@@ -50,7 +65,7 @@ const CONTROLLER_ABI = [
     name: "rentPrice",
     stateMutability: "view",
     inputs: [
-      { name: "name", type: "string" },
+      { name: "label", type: "string" },
       { name: "duration", type: "uint256" },
     ],
     outputs: [
@@ -72,25 +87,9 @@ const CONTROLLER_ABI = [
   },
   {
     type: "function",
-    name: "maxCommitmentAge",
-    stateMutability: "view",
-    inputs: [],
-    outputs: [{ type: "uint256" }],
-  },
-  {
-    type: "function",
     name: "makeCommitment",
     stateMutability: "pure",
-    inputs: [
-      { name: "name", type: "string" },
-      { name: "owner", type: "address" },
-      { name: "duration", type: "uint256" },
-      { name: "secret", type: "bytes32" },
-      { name: "resolver", type: "address" },
-      { name: "data", type: "bytes[]" },
-      { name: "reverseRecord", type: "bool" },
-      { name: "ownerControlledFuses", type: "uint16" },
-    ],
+    inputs: [REGISTRATION_TUPLE],
     outputs: [{ type: "bytes32" }],
   },
   {
@@ -104,16 +103,7 @@ const CONTROLLER_ABI = [
     type: "function",
     name: "register",
     stateMutability: "payable",
-    inputs: [
-      { name: "name", type: "string" },
-      { name: "owner", type: "address" },
-      { name: "duration", type: "uint256" },
-      { name: "secret", type: "bytes32" },
-      { name: "resolver", type: "address" },
-      { name: "data", type: "bytes[]" },
-      { name: "reverseRecord", type: "bool" },
-      { name: "ownerControlledFuses", type: "uint16" },
-    ],
+    inputs: [REGISTRATION_TUPLE],
     outputs: [],
   },
 ] as const;
@@ -135,6 +125,16 @@ const REGISTRY_ABI = [
       { name: "resolver", type: "address" },
     ],
     outputs: [],
+  },
+] as const;
+
+const BASE_REGISTRAR_ABI = [
+  {
+    type: "function",
+    name: "ownerOf",
+    stateMutability: "view",
+    inputs: [{ name: "tokenId", type: "uint256" }],
+    outputs: [{ type: "address" }],
   },
 ] as const;
 
@@ -195,30 +195,40 @@ async function main(): Promise<void> {
   const node = namehash(fullName);
   const tokenId = BigInt(keccak256(encodePacked(["string"], [label])));
 
-  const currentOwner = await publicClient.readContract({
-    address: BASE_REGISTRAR,
-    abi: REGISTRY_ABI,
-    functionName: "owner",
-    args: [`0x${tokenId.toString(16).padStart(64, "0")}` as Hex],
+  const available = await publicClient.readContract({
+    address: ETH_REGISTRAR_CONTROLLER,
+    abi: CONTROLLER_ABI,
+    functionName: "available",
+    args: [label],
   });
 
-  if (
-    typeof currentOwner === "string" &&
-    currentOwner.toLowerCase() === account.address.toLowerCase()
-  ) {
-    log(`name is already owned by signer; skipping registration`);
-  } else {
-    const available = await publicClient.readContract({
-      address: ETH_REGISTRAR_CONTROLLER,
-      abi: CONTROLLER_ABI,
-      functionName: "available",
-      args: [label],
-    });
-    if (!available) {
+  let alreadyOwned = false;
+  if (!available) {
+    let currentOwner: string | undefined;
+    try {
+      currentOwner = (await publicClient.readContract({
+        address: BASE_REGISTRAR,
+        abi: BASE_REGISTRAR_ABI,
+        functionName: "ownerOf",
+        args: [tokenId],
+      })) as string;
+    } catch {
+      currentOwner = undefined;
+    }
+    if (
+      currentOwner &&
+      currentOwner.toLowerCase() === account.address.toLowerCase()
+    ) {
+      alreadyOwned = true;
+      log(`name is already owned by signer; skipping registration`);
+    } else {
       throw new Error(
-        `${fullName} is not available on Sepolia (owner ${currentOwner}); pick another label or use the existing owner key`,
+        `${fullName} is not available on Sepolia (owner ${currentOwner ?? "unknown"}); pick another label or use the existing owner key`,
       );
     }
+  }
+
+  if (!alreadyOwned) {
     log(`name is available; entering commit/reveal flow`);
 
     const price = await publicClient.readContract({
@@ -238,23 +248,25 @@ async function main(): Promise<void> {
       );
     }
 
-    const secret =
-      `0x${randomBytes(32).toString("hex")}` as Hex;
+    const secret = `0x${randomBytes(32).toString("hex")}` as Hex;
+    const ZERO_BYTES32 = `0x${"00".repeat(32)}` as Hex;
+
+    const registration = {
+      label,
+      owner: account.address,
+      duration,
+      secret,
+      resolver: PUBLIC_RESOLVER,
+      data: [] as Hex[],
+      reverseRecord: 0,
+      referrer: ZERO_BYTES32,
+    } as const;
 
     const commitment = await publicClient.readContract({
       address: ETH_REGISTRAR_CONTROLLER,
       abi: CONTROLLER_ABI,
       functionName: "makeCommitment",
-      args: [
-        label,
-        account.address,
-        duration,
-        secret,
-        PUBLIC_RESOLVER,
-        [],
-        false,
-        0,
-      ],
+      args: [registration],
     });
     log(`commitment: ${commitment}`);
 
@@ -280,16 +292,7 @@ async function main(): Promise<void> {
       address: ETH_REGISTRAR_CONTROLLER,
       abi: CONTROLLER_ABI,
       functionName: "register",
-      args: [
-        label,
-        account.address,
-        duration,
-        secret,
-        PUBLIC_RESOLVER,
-        [],
-        false,
-        0,
-      ],
+      args: [registration],
       value: totalCost,
     });
     log(`register tx: ${registerTx}`);
