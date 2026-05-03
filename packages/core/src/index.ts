@@ -58,6 +58,11 @@ export {
 } from "./compose.js";
 
 export {
+  storageConformanceCases,
+  type ConformanceCase,
+} from "./conformance/storage.js";
+
+export {
   AcidError,
   NonDeterministicKeyError,
   IdempotentInFlightError,
