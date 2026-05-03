@@ -23,6 +23,9 @@
   "peerDependencies": {
     "@openacid/acid": "workspace:*"
   },
+  "dependencies": {
+    "viem": "^2.21.0"
+  },
   "devDependencies": {
     "@openacid/acid": "workspace:*",
     "tsup": "^8.3.5",

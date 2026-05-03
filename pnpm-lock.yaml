@@ -31,6 +31,10 @@ importers:
         version: 3.2.4
 
   packages/adapter-memory:
+    dependencies:
+      viem:
+        specifier: ^2.21.0
+        version: 2.48.8(typescript@5.9.3)
     devDependencies:
       '@openacid/acid':
         specifier: workspace:*

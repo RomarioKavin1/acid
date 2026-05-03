@@ -35,6 +35,21 @@ export {
   noOrphanAllowances,
 } from "./invariants/index.js";
 
+export { receipted, type ReceiptedOpts } from "./receipted.js";
+
+export {
+  verifyReceipt,
+  receiptDigest,
+  buildDomain,
+  hashCanonical,
+  hashTxRefs,
+  deriveCallId,
+  RECEIPT_DOMAIN_NAME,
+  RECEIPT_DOMAIN_VERSION,
+  RECEIPT_TYPES,
+  type ReceiptDomain,
+} from "./receipt.js";
+
 export {
   AcidError,
   NonDeterministicKeyError,
