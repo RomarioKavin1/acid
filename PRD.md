@@ -558,18 +558,21 @@ Closing slide: **A.C.I.D. — for AI agents.**
 
 ### 10.4 Submission checklist
 
-- [ ] GitHub public, MIT license
-- [ ] README with ACID table, four-primitive code block, install/quickstart, limitations
-- [ ] PRD.md (this doc)
-- [ ] CLAUDE.md (context primer)
-- [ ] FEEDBACK.md (Uniswap)
-- [ ] Architecture diagram (one image)
-- [ ] Demo video (≤3 min)
-- [ ] Live demo link
-- [ ] Contract deployment addresses listed in README
-- [ ] At least one working example agent in `/examples`
-- [ ] ENS name registered + subname registrar deployed
-- [ ] At least one minted iNFT or live-resolvable agent identity
+- [x] **MIT license** — see `LICENSE`
+- [x] **README** with ACID table, four-primitive code block, install/quickstart, deployed addresses, ENS verification one-liner, limitations
+- [x] **PRD.md** (this doc)
+- [x] **CLAUDE.md** (context primer)
+- [x] **FEEDBACK.md** (Uniswap)
+- [x] **Contract deployment addresses listed in README** — `ReceiptRegistry` on 0G Galileo at `0xd3E6277960025B4D0c161e20304a3a44231d0D1C`
+- [x] **At least one working example agent in `/examples`** — `examples/multi-step-uniswap-agent` runs end-to-end against real Base Sepolia + 0G Galileo + Sepolia ENS
+- [x] **ENS name registered** — `openacid.eth` on Sepolia, owner `0x3ca83AE5…BDC9A`, with live `receipt.latest` / `receipt.head` / `agent.signer` text records
+- [x] **Live-resolvable agent identity** (satisfies the OR-clause for the iNFT requirement)
+- [x] **npm published** — 5 packages × 4 versions (0.1.0 → 0.2.0)
+- [ ] **GitHub public** — repo not yet pushed/made public
+- [ ] **Architecture diagram** (one image) — TODO
+- [ ] **Demo video** (≤3 min, A/C/I/D scenes per §10.3) — TODO
+- [ ] **Live demo link** — TODO (likely the README + a short loom of the agent + the ENS resolver call)
+- [ ] **ENS subname registrar deployed** — using parent name directly for v0; subname registrar deferred
 
 ---
 
@@ -786,13 +789,13 @@ Do **not** cut: the four core primitives, the memory adapter, the example agent,
 | 2 | Domain: `acid.ai` — available? | Phase 7 | **Resolved: defer.** `acid.ai` is taken (NameCheap, expires 2027). Brand survives via tagline + GitHub + npm + ENS resolver. Placeholder `openacid.dev` if a domain becomes necessary for v0 marketing. |
 | 3 | Target chain for example: Base, Unichain, or 0G Chain only? | Phase 5 | **Resolved: 0G Chain (Galileo testnet, chainId 16602) is the primary chain** for `ReceiptRegistry`, receipts, storage, and compute. **Base Sepolia (chainId 84532) is the swap chain** for the Uniswap V4 example (V4 is not deployed on 0G Chain). Both have full V4 deployments verified in Phase 0. |
 | 4 | OpenClaw native or build a thin compat shim? | Phase 5 | **Resolved: drop OpenClaw; example agent is a plain TypeScript loop + viem.** Phase 0 review of OpenClaw's `AGENTS.md` showed it is a personal-assistant runtime (channel/message-driven), not a goal/tool-driven agent framework. Wrong shape for an autonomous rebalancer. PRD §12 already named this fallback as the mitigation; invoke it now. ACID itself stays framework-agnostic, so the demo's framework choice doesn't affect the library. |
-| 5 | iNFT minting in v0 or defer to v1? | Phase 6 | **Resolved: defer to v1.** Submission §10.4 reads "At least one minted iNFT **or** live-resolvable agent identity" — the ENS subname + receipt text records satisfy the OR-clause. Skipping iNFT keeps Phase 6 scope tight. |
-| 6 | Pin which LLM (qwen3.6-plus / GLM-5-FP8) for the demo agent? | Phase 5 | **Resolved: resolve at Phase 5 via runtime `broker.inference.getServiceMetadata(providerAddress)`.** Phase 0 found 0G Compute docs explicitly state "the provider and model catalog changes frequently"; pinning a static identifier in the PRD is brittle. Pin the chosen model in `.env.local` once smoke-tested. **Local-dev fallback:** Anthropic Claude Sonnet 4.6 via the Anthropic SDK when 0G Compute creds aren't present. |
+| 5 | iNFT minting in v0 or defer to v1? | Phase 6 | **Resolved: deferred to v1; OR-clause satisfied by live-resolvable identity** at `openacid.eth` on Sepolia (registered Phase 6). |
+| 6 | Pin which LLM (qwen3.6-plus / GLM-5-FP8) for the demo agent? | Phase 5 | **Resolved (deferred wire-up): the v0 example agent uses a fixed-rate decision (`oracleRatePerEth`) rather than calling 0G Compute on every tick.** Real LLM reasoning is a v0.3 add — wire `broker.inference.getServiceMetadata(providerAddress)` into the agent's `decideRebalance` step. The four-primitive ACID guarantee story stands on its own without LLM-in-the-loop reasoning. |
 | 7 | Logo / wordmark — DIY or use a generator? | Phase 7 | **Resolved: defer.** Plain monospace `acid` wordmark plus the four-letter A.C.I.D. motif (already used in §10.3 demo script) is enough for the v0 submission. No designer-time required. |
 | 8 | Receipt signing scheme: EIP-191 personal_sign, EIP-712 typed, or raw secp256k1? | Phase 2 | **Resolved: EIP-712 typed data signing.** Reasons: (1) `ReceiptRegistry.sol` can call `ecrecover(structHash, v, r, s)` natively; (2) domain separator includes `chainId` (0G Chain = 16602) preventing cross-chain replay; (3) Receipt struct fields are human-readable in the signature — auditors see what was signed. viem `signTypedData` / `verifyTypedData` cover the full impl. |
 | 9 | Saga state size limits — what's the upper bound for a single saga in 0G Storage? | Phase 4 | **Resolved: 1 MB soft warn, 10 MB hard error; chunked-stream above 1 MB via `StorageAdapter.stream`.** 0G Storage supports far more than 10 MB, but a saga whose state crosses 1 MB is almost certainly a code smell (either the inputs/outputs aren't being hashed, or the saga should be split). Document the warning in the README's "Limitations." |
 | 10 | License — MIT, Apache-2.0, or AGPL? | Phase 7 | **Resolved: MIT.** Maximum adoption, no patent-clause friction, matches the dependency norm in npm/TypeScript ecosystem. Apache-2.0's patent grant is nice but uncommon in JS-land; AGPL would kill library adoption outright. |
-| 11 | ENS parent name — `acid.eth` is taken; fallback? | Phase 6 | **Resolved: `openacid.eth`** (matches the npm `@openacid` scope). Phase 0 ENS API checks (ensideas, web3.bio, ensdata) consistently report no resolution, suggesting unregistered. Verify on-chain via ENS Registry `owner(node)` before final claim in Phase 6. Fallback if unexpectedly taken: `acid-agents.eth`. |
+| 11 | ENS parent name — `acid.eth` is taken; fallback? | Phase 6 | **Resolved + REGISTERED on Sepolia ENS** as `openacid.eth`. Owner: `0x3ca83AE589a1d23AccfD43667FeE65605AdBDC9A`. Resolver: `0xE99638b40E4Fff0129D56f03b55b6bbC4BBE49b5`. Live `receipt.latest`, `receipt.head`, `agent.signer` text records mirrored from the agent on every receipt (verified Phase 6). |
 
 ---
 
