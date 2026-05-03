@@ -1,6 +1,6 @@
 {
   "name": "@openacid/adapter-memory",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "In-memory StorageAdapter (atomic cas) and MemorySigner (real secp256k1) for @openacid/acid tests and dry-run agents.",
   "license": "MIT",
   "keywords": [

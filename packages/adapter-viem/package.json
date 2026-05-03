@@ -1,6 +1,6 @@
 {
   "name": "@openacid/adapter-viem",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "viem-backed ChainAdapter and SignerAdapter for @openacid/acid — works with any EVM (Base, Unichain, 0G Galileo, mainnet).",
   "license": "MIT",
   "keywords": [

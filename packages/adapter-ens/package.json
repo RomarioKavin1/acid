@@ -1,6 +1,6 @@
 {
   "name": "@openacid/adapter-ens",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Mirror @openacid/acid receipts to ENS text records — third parties resolve the audit trail with no library install.",
   "license": "MIT",
   "keywords": [

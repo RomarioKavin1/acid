@@ -1,6 +1,6 @@
 {
   "name": "@openacid/adapter-0g-storage",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Write-through StorageAdapter for @openacid/acid backed by 0G Storage on Galileo testnet — receipts persist as content-addressed blobs.",
   "license": "MIT",
   "keywords": [
