@@ -47,7 +47,7 @@ export class InvariantViolationError extends AcidError {
 export class SagaCompensationError extends AcidError {
   constructor(
     public readonly stepId: string,
-    public readonly cause: unknown,
+    public override readonly cause: unknown,
   ) {
     super(`compensation for step '${stepId}' threw: ${describe(cause)}`);
     this.name = "SagaCompensationError";
@@ -57,7 +57,7 @@ export class SagaCompensationError extends AcidError {
 export class SagaStepError extends AcidError {
   constructor(
     public readonly stepId: string,
-    public readonly cause: unknown,
+    public override readonly cause: unknown,
   ) {
     super(`saga step '${stepId}' failed: ${describe(cause)}`);
     this.name = "SagaStepError";

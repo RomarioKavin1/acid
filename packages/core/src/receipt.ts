@@ -3,7 +3,6 @@ import {
   keccak256,
   recoverAddress,
   stringToBytes,
-  toBytes,
   type Hex,
 } from "viem";
 import type { Receipt } from "./types.js";
@@ -139,4 +138,3 @@ export async function verifyReceipt(
 }
 
 export { ZERO_BYTES32 };
-export { toBytes };

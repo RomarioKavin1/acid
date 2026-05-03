@@ -3,5 +3,5 @@ export interface StorageAdapter {
   put<T>(key: string, value: T, opts?: { ttl?: number }): Promise<void>;
   delete(key: string): Promise<void>;
   cas<T>(key: string, expected: T | null, next: T): Promise<boolean>;
-  stream?: (key: string, chunks: AsyncIterable<Buffer>) => Promise<string>;
+  stream?: (key: string, chunks: AsyncIterable<Uint8Array>) => Promise<string>;
 }
