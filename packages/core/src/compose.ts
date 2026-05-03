@@ -34,6 +34,18 @@ export function getMeta(fn: unknown): AcidMeta | null {
   return (meta as AcidMeta) ?? null;
 }
 
+/**
+ * Returns a human-readable label for a composed wrapper, e.g.
+ * `receipted→invariant→idempotent→saga`. Useful for logging and trace
+ * decoration. Returns `"user"` when the function is not an OpenACID-tagged
+ * wrapper.
+ */
+export function getCompositionLabel(fn: unknown): string {
+  const order = inspectComposition(fn);
+  if (order.length === 0) return "user";
+  return order.join("→");
+}
+
 export function inspectComposition(fn: unknown): AcidKind[] {
   const order: AcidKind[] = [];
   let cur: unknown = fn;

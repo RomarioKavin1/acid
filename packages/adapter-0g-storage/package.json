@@ -1,6 +1,6 @@
 {
   "name": "@openacid/adapter-0g-storage",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "0G Storage StorageAdapter for ACID — KV markers + blob receipts.",
   "license": "MIT",
   "type": "module",

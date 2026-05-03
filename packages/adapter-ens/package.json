@@ -1,6 +1,6 @@
 {
   "name": "@openacid/adapter-ens",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Mirror OpenACID receipts to ENS text records so a third party can resolve the audit trail with no library install.",
   "license": "MIT",
   "type": "module",

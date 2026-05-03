@@ -7,6 +7,7 @@ import {
   saga,
   inspectComposition,
   checkComposition,
+  getCompositionLabel,
 } from "@openacid/acid";
 
 const ANVIL_KEY =
@@ -82,5 +83,23 @@ describe("composition introspection", () => {
     const fn = (n: number) => n;
     expect(inspectComposition(fn)).toEqual([]);
     expect(checkComposition(fn)).toEqual([]);
+  });
+
+  it("getCompositionLabel renders the chain with arrows", () => {
+    const storage = new MemoryStorageAdapter();
+    const fn = idempotent<number, number>({
+      key: (n) => `${n}`,
+      storage,
+    })(
+      saga<number>({
+        steps: [{ id: "x", do: async () => 1 }],
+        storage,
+      }),
+    );
+    expect(getCompositionLabel(fn)).toBe("idempotent→saga");
+  });
+
+  it("getCompositionLabel falls back to 'user' for plain fns", () => {
+    expect(getCompositionLabel((n: number) => n)).toBe("user");
   });
 });

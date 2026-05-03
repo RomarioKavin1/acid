@@ -53,6 +53,7 @@ export {
 export {
   inspectComposition,
   checkComposition,
+  getCompositionLabel,
   type AcidKind,
   type CompositionWarning,
 } from "./compose.js";
