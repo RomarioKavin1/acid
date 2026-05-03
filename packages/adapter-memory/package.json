@@ -1,7 +1,7 @@
 {
-  "name": "@openacid/acid",
+  "name": "@openacid/adapter-memory",
   "version": "0.0.0",
-  "description": "Durable execution primitives for AI agents.",
+  "description": "In-memory StorageAdapter for tests. Not for production.",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -20,10 +20,11 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
-  "dependencies": {
-    "viem": "^2.21.0"
+  "peerDependencies": {
+    "@openacid/acid": "workspace:*"
   },
   "devDependencies": {
+    "@openacid/acid": "workspace:*",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",
     "vitest": "^3.0.0"

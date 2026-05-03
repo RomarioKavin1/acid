@@ -1,4 +1,8 @@
 import { defineConfig } from "vitest/config";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const here = fileURLToPath(new URL(".", import.meta.url));
 
 export default defineConfig({
   test: {
@@ -8,6 +12,15 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "html", "lcov"],
       include: ["packages/*/src/**/*.ts"],
+    },
+  },
+  resolve: {
+    alias: {
+      "@openacid/acid": resolve(here, "packages/core/src/index.ts"),
+      "@openacid/adapter-memory": resolve(
+        here,
+        "packages/adapter-memory/src/index.ts",
+      ),
     },
   },
 });
