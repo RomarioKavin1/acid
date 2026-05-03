@@ -23,6 +23,19 @@ export {
 export { saga, type SagaOpts } from "./saga.js";
 
 export {
+  invariant,
+  type InvariantOpts,
+  type InvariantOnViolation,
+} from "./invariant.js";
+
+export {
+  balanceWithinBound,
+  gasUnderCap,
+  slippageBelow,
+  noOrphanAllowances,
+} from "./invariants/index.js";
+
+export {
   AcidError,
   NonDeterministicKeyError,
   IdempotentInFlightError,
