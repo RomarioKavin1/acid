@@ -1,8 +1,22 @@
 {
   "name": "@openacid/adapter-memory",
-  "version": "0.2.0",
-  "description": "In-memory StorageAdapter for tests. Not for production.",
+  "version": "0.2.1",
+  "description": "In-memory StorageAdapter (atomic cas) and MemorySigner (real secp256k1) for @openacid/acid tests and dry-run agents.",
   "license": "MIT",
+  "keywords": [
+    "openacid",
+    "agent",
+    "ai",
+    "memory",
+    "storage-adapter",
+    "signer"
+  ],
+  "homepage": "https://github.com/RomarioKavin1/acid",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RomarioKavin1/acid.git",
+    "directory": "packages/adapter-memory"
+  },
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -14,7 +28,9 @@
       "require": "./dist/index.cjs"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",

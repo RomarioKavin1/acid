@@ -1,8 +1,24 @@
 {
   "name": "@openacid/adapter-viem",
-  "version": "0.2.0",
-  "description": "viem-backed ChainAdapter and SignerAdapter for ACID.",
+  "version": "0.2.1",
+  "description": "viem-backed ChainAdapter and SignerAdapter for @openacid/acid — works with any EVM (Base, Unichain, 0G Galileo, mainnet).",
   "license": "MIT",
+  "keywords": [
+    "openacid",
+    "agent",
+    "ai",
+    "viem",
+    "evm",
+    "chain-adapter",
+    "signer",
+    "eip-712"
+  ],
+  "homepage": "https://github.com/RomarioKavin1/acid",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RomarioKavin1/acid.git",
+    "directory": "packages/adapter-viem"
+  },
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -14,7 +30,9 @@
       "require": "./dist/index.cjs"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",

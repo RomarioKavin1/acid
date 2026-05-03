@@ -1,8 +1,26 @@
 {
   "name": "@openacid/acid",
-  "version": "0.2.0",
-  "description": "Durable execution primitives for AI agents.",
+  "version": "0.2.1",
+  "description": "Durable execution primitives for AI agents that hold real money — atomicity, consistency, isolation, durability as four composable wrappers.",
   "license": "MIT",
+  "keywords": [
+    "agent",
+    "ai",
+    "saga",
+    "idempotent",
+    "invariant",
+    "receipt",
+    "eip-712",
+    "durability",
+    "0g",
+    "ens"
+  ],
+  "homepage": "https://github.com/RomarioKavin1/acid",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RomarioKavin1/acid.git",
+    "directory": "packages/core"
+  },
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -14,7 +32,9 @@
       "require": "./dist/index.cjs"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",

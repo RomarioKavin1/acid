@@ -1,8 +1,24 @@
 {
   "name": "@openacid/adapter-0g-storage",
-  "version": "0.2.0",
-  "description": "0G Storage StorageAdapter for ACID — KV markers + blob receipts.",
+  "version": "0.2.1",
+  "description": "Write-through StorageAdapter for @openacid/acid backed by 0G Storage on Galileo testnet — receipts persist as content-addressed blobs.",
   "license": "MIT",
+  "keywords": [
+    "openacid",
+    "agent",
+    "ai",
+    "0g",
+    "0g-storage",
+    "galileo",
+    "storage-adapter",
+    "receipts"
+  ],
+  "homepage": "https://github.com/RomarioKavin1/acid",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RomarioKavin1/acid.git",
+    "directory": "packages/adapter-0g-storage"
+  },
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -14,7 +30,9 @@
       "require": "./dist/index.cjs"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
